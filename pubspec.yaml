@@ -1,0 +1,70 @@
+name: attamana_truck_app
+version: 1.0.9+1
+publish_to: none
+description: A new Flutter project.
+environment:
+  sdk: '>=3.4.3 <4.0.0'
+
+dependencies:
+  auto_size_text: ^3.0.0
+  awesome_dialog: ^3.2.1
+  cupertino_icons: ^1.0.6
+  flutter_launcher_icons: ^0.14.3
+  get: 4.6.6
+  get_storage: ^2.0.3
+  intl: any
+  lottie: any
+  nb_utils: ^7.1.3
+  persistent_bottom_nav_bar: ^6.2.1
+#  slider_button: ^2.1.0
+  action_slider: ^0.7.0
+#  vibration: ^1.8.4
+  timeline_tile: ^2.0.0
+  package_info_plus: ^8.0.2
+  file_picker: ^8.1.2
+  fluttertoast: ^8.2.9
+  image_picker: any
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^3.0.0
+  flutter_test:
+    sdk: flutter
+
+#flutter_icons:
+#  android: "launcher_icon"
+#  image_path_android: "assets/images/logo_attamana_truck.jpg"
+#  ios: "launcher_icon"
+#  remove_alpha_ios: true
+#  image_path_ios: "assets/images/logo_attamana_truck.jpg"
+
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/lotties/
+
+  fonts:
+    - family: Baloo
+      fonts:
+        - asset: assets/fonts/baloo/Baloo-Regular.ttf
+    - family: Avenir
+      fonts:
+        - asset: assets/fonts/avenir/AvenirLTStd-Black.otf
+        - asset: assets/fonts/avenir/AvenirLTStd-BlackOblique.otf
+        - asset: assets/fonts/avenir/AvenirLTStd-Book.otf
+        - asset: assets/fonts/avenir/AvenirLTStd-BookOblique.otf
+        - asset: assets/fonts/avenir/AvenirLTStd-Heavy.otf
+        - asset: assets/fonts/avenir/AvenirLTStd-HeavyOblique.otf
+        - asset: assets/fonts/avenir/AvenirLTStd-Light.otf
+        - asset: assets/fonts/avenir/AvenirLTStd-LightOblique.otf
+        - asset: assets/fonts/avenir/AvenirLTStd-Medium.otf
+        - asset: assets/fonts/avenir/AvenirLTStd-MediumOblique.otf
+        - asset: assets/fonts/avenir/AvenirLTStd-Oblique.otf
+        - asset: assets/fonts/avenir/AvenirLTStd-Roman.otf
+
+

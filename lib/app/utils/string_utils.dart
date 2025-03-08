@@ -1,0 +1,13 @@
+const String kToken = 'token';
+const String kSesionAuth = 'sesion_auth';
+const String kSesionInstall = 'sesion_install';
+const String kLogin = 'login';
+const String kUserId = 'userId';
+const String kUserNama = 'userNama';
+const String kUsername = 'username';
+const String kUserPassword = 'password';
+const String kUserTelp = 'userTelp';
+const String kUserEmail = 'userEmail';
+const String kRoleId = 'roleId';
+const String kRoleName = 'roleName';
+const String kDoId = 'doId';

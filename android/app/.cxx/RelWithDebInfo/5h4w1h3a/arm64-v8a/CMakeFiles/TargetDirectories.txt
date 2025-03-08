@@ -1,0 +1,2 @@
+/Users/febriyanadifatma/Documents/Work/ZDT/Attamana/Flutter/attamana_truck_app/android/app/.cxx/RelWithDebInfo/5h4w1h3a/arm64-v8a/CMakeFiles/edit_cache.dir
+/Users/febriyanadifatma/Documents/Work/ZDT/Attamana/Flutter/attamana_truck_app/android/app/.cxx/RelWithDebInfo/5h4w1h3a/arm64-v8a/CMakeFiles/rebuild_cache.dir
