@@ -8,8 +8,11 @@ class AccountController extends GetxController {
 
   //storage
   var userNama = storage.read(kUserNama);
+  var userId = storage.read(kUserId);
+
   //controller
   var authC = Get.put(AuthController());
+
   @override
   void onInit() {
     super.onInit();
@@ -24,5 +27,4 @@ class AccountController extends GetxController {
   void onClose() {
     super.onClose();
   }
-
 }

@@ -7,6 +7,7 @@ String listDoToJson(List<ListDo> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class ListDo {
+
   String id;
   DateTime tglEstimasiPickup;
   String jamEstimasiPickup;
@@ -21,6 +22,9 @@ class ListDo {
   dynamic memo;
   dynamic status;
   String namaPenerima;
+
+  /// tambahan untuk offline sync
+  int isSynced;
 
   ListDo({
     required this.id,
@@ -37,44 +41,89 @@ class ListDo {
     required this.memo,
     required this.status,
     required this.namaPenerima,
+    this.isSynced = 0,
   });
 
   factory ListDo.fromJson(Map<String, dynamic> json) => ListDo(
-        id: json["id"],
-        tglEstimasiPickup:
-            DateTime.parse(json["tgl_estimasi_pickup"] ?? '0000-00-00'),
-        jamEstimasiPickup: json["jam_estimasi_pickup"],
-        tglEstimasiSampai:
-            DateTime.parse(json["tgl_estimasi_sampai"] ?? '0000-00-00'),
-        jamEstimasiSampai: json["jam_estimasi_sampai"] ?? '-',
-        refDate: DateTime.parse(json["ref_date"] ?? '0000-00-00'),
-        noDeliv: json["no_deliv"] ?? '-',
-        shipVia: json["ship_via"] ?? '-',
-        poNumber: json["po_number"] ?? '-',
-        alamatPickup: json["alamat_pickup"] ?? '-',
-        alamatPengiriman: json["alamat_pengiriman"] ?? '-',
-        memo: json["memo"] ?? '-',
-        status: json["status"] ?? '-',
-        namaPenerima: json["nama_penerima"] ?? '-',
-      );
+    id: json["id"],
+    tglEstimasiPickup:
+    DateTime.parse(json["tgl_estimasi_pickup"]),
+    jamEstimasiPickup: json["jam_estimasi_pickup"] ?? '-',
+    tglEstimasiSampai:
+    DateTime.parse(json["tgl_estimasi_sampai"]),
+    jamEstimasiSampai: json["jam_estimasi_sampai"] ?? '-',
+    refDate: DateTime.parse(json["ref_date"]),
+    noDeliv: json["no_deliv"] ?? '-',
+    shipVia: json["ship_via"] ?? '-',
+    poNumber: json["po_number"] ?? '-',
+    alamatPickup: json["alamat_pickup"] ?? '-',
+    alamatPengiriman: json["alamat_pengiriman"] ?? '-',
+    memo: json["memo"] ?? '-',
+    status: json["status"] ?? '-',
+    namaPenerima: json["nama_penerima"] ?? '-',
+  );
 
   Map<String, dynamic> toJson() => {
-        "id": id,
-        "tgl_estimasi_pickup":
-            "${tglEstimasiPickup.year.toString().padLeft(4, '0')}-${tglEstimasiPickup.month.toString().padLeft(2, '0')}-${tglEstimasiPickup.day.toString().padLeft(2, '0')}",
-        "jam_estimasi_pickup": jamEstimasiPickup,
-        "tgl_estimasi_sampai":
-            "${tglEstimasiSampai.year.toString().padLeft(4, '0')}-${tglEstimasiSampai.month.toString().padLeft(2, '0')}-${tglEstimasiSampai.day.toString().padLeft(2, '0')}",
-        "jam_estimasi_sampai": jamEstimasiSampai,
+    "id": id,
+    "tgl_estimasi_pickup":
+    tglEstimasiPickup.toIso8601String(),
+    "jam_estimasi_pickup": jamEstimasiPickup,
+    "tgl_estimasi_sampai":
+    tglEstimasiSampai.toIso8601String(),
+    "jam_estimasi_sampai": jamEstimasiSampai,
+    "ref_date": refDate.toIso8601String(),
+    "no_deliv": noDeliv,
+    "ship_via": shipVia,
+    "po_number": poNumber,
+    "alamat_pickup": alamatPickup,
+    "alamat_pengiriman": alamatPengiriman,
+    "memo": memo,
+    "status": status,
+    "nama_penerima": namaPenerima,
+  };
+
+  /// =========================
+  /// SQLITE
+  /// =========================
+
+  factory ListDo.fromMap(Map<String, dynamic> map) => ListDo(
+    id: map["id"],
+    tglEstimasiPickup:
+    DateTime.parse(map["tgl_estimasi_pickup"]),
+    jamEstimasiPickup: map["jam_estimasi_pickup"],
+    tglEstimasiSampai:
+    DateTime.parse(map["tgl_estimasi_sampai"]),
+    jamEstimasiSampai: map["jam_estimasi_sampai"],
+    refDate: DateTime.parse(map["ref_date"]),
+    noDeliv: map["no_deliv"],
+    shipVia: map["ship_via"],
+    poNumber: map["po_number"],
+    alamatPickup: map["alamat_pickup"],
+    alamatPengiriman: map["alamat_pengiriman"],
+    memo: map["memo"],
+    status: map["status"],
+    namaPenerima: map["nama_penerima"],
+    isSynced: map["is_synced"] ?? 0,
+  );
+
+  Map<String, dynamic> toMap() => {
+    "id": id,
+    "tgl_estimasi_pickup":
+    tglEstimasiPickup.toIso8601String(),
+    "jam_estimasi_pickup": jamEstimasiPickup,
+    "tgl_estimasi_sampai":
+    tglEstimasiSampai.toIso8601String(),
+    "jam_estimasi_sampai": jamEstimasiSampai,
     "ref_date":
-    "${refDate.year.toString().padLeft(4, '0')}-${refDate.month.toString().padLeft(2, '0')}-${refDate.day.toString().padLeft(2, '0')}",
-        "no_deliv": noDeliv,
-        "ship_via": shipVia,
-        "po_number": poNumber,
-        "alamat_pickup": alamatPickup,
-        "alamat_pengiriman": alamatPengiriman,
-        "memo": memo,
-        "status": status,
-        "nama_penerima": namaPenerima
-      };
+    refDate.toIso8601String(),
+    "no_deliv": noDeliv,
+    "ship_via": shipVia,
+    "po_number": poNumber,
+    "alamat_pickup": alamatPickup,
+    "alamat_pengiriman": alamatPengiriman,
+    "memo": memo,
+    "status": status,
+    "nama_penerima": namaPenerima,
+    "is_synced": isSynced,
+  };
 }

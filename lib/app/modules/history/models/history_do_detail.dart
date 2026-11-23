@@ -4,9 +4,12 @@
 
 import 'dart:convert';
 
-List<HistoryDoDetail> historyDoDetailFromJson(List lst) => List<HistoryDoDetail>.from(lst.map((x) => HistoryDoDetail.fromJson(x)));
+List<HistoryDoDetail> historyDoDetailFromJson(List lst) =>
+    List<HistoryDoDetail>.from(lst.map((x) => HistoryDoDetail.fromJson(x)));
 
-String historyDoDetailToJson(List<HistoryDoDetail> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
+String historyDoDetailToJson(List<HistoryDoDetail> data) =>
+    json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
+
 class HistoryDoDetail {
   String id;
   DateTime tglEstimasiPickup;
@@ -46,48 +49,184 @@ class HistoryDoDetail {
     required this.picture,
   });
 
-  factory HistoryDoDetail.fromJson(Map<String, dynamic> json) => HistoryDoDetail(
-    id: json["id"],
-    tglEstimasiPickup: DateTime.parse(json["tgl_estimasi_pickup"]),
-    jamEstimasiPickup: json["jam_estimasi_pickup"],
-    tglEstimasiSampai: DateTime.parse(json["tgl_estimasi_sampai"]),
-    jamEstimasiSampai: json["jam_estimasi_sampai"],
-    refDate: DateTime.parse(json["ref_date"] ?? '0000-00-00'),
-    noDeliv: json["no_deliv"],
-    shipVia: json["ship_via"],
-    poNumber: json["po_number"],
-    alamatPickup: json["alamat_pickup"],
-    alamatPengiriman: json["alamat_pengiriman"],
-    memo: json["memo"],
-    status: json["status"],
-    tanggalDiterima: DateTime.parse(json["tanggal_diterima"]),
-    jamDiterima: json["jam_diterima"],
-    namaPenerima: json["nama_penerima"],
-    picture: List<Picture>.from(json["picture"].map((x) => Picture.fromJson(x))),
-  );
+  factory HistoryDoDetail.fromJson(
+      Map<String, dynamic> json) =>
+      HistoryDoDetail(
+
+        id: json["id"],
+
+        tglEstimasiPickup:
+        parseDate(
+          json["tgl_estimasi_pickup"],
+        ),
+
+        jamEstimasiPickup:
+        json["jam_estimasi_pickup"] ?? '-',
+
+        tglEstimasiSampai:
+        parseDate(
+          json["tgl_estimasi_sampai"],
+        ),
+
+        jamEstimasiSampai:
+        json["jam_estimasi_sampai"] ?? '-',
+
+        refDate:
+        parseDate(
+          json["ref_date"],
+        ),
+
+        noDeliv:
+        json["no_deliv"] ?? '-',
+
+        shipVia:
+        json["ship_via"] ?? '-',
+
+        poNumber:
+        json["po_number"] ?? '-',
+
+        alamatPickup:
+        json["alamat_pickup"] ?? '-',
+
+        alamatPengiriman:
+        json["alamat_pengiriman"] ?? '-',
+
+        memo:
+        json["memo"] ?? '-',
+
+        status:
+        json["status"] ?? '-',
+
+        tanggalDiterima:
+        parseDate(
+          json["tanggal_diterima"],
+        ),
+
+        jamDiterima:
+        json["jam_diterima"] ?? '-',
+
+        namaPenerima:
+        json["nama_penerima"] ?? '-',
+
+        picture:
+        json["picture"] == null
+            ? []
+            : List<Picture>.from(
+          json["picture"].map(
+                (x) => Picture
+                .fromJson(x),
+          ),
+        ),
+      );
 
   Map<String, dynamic> toJson() => {
-    "id": id,
-    "tgl_estimasi_pickup": "${tglEstimasiPickup.year.toString().padLeft(4, '0')}-${tglEstimasiPickup.month.toString().padLeft(2, '0')}-${tglEstimasiPickup.day.toString().padLeft(2, '0')}",
-    "jam_estimasi_pickup": jamEstimasiPickup,
-    "tgl_estimasi_sampai": "${tglEstimasiSampai.year.toString().padLeft(4, '0')}-${tglEstimasiSampai.month.toString().padLeft(2, '0')}-${tglEstimasiSampai.day.toString().padLeft(2, '0')}",
-    "jam_estimasi_sampai": jamEstimasiSampai,
-    "ref_date":
-    "${refDate.year.toString().padLeft(4, '0')}-${refDate.month.toString().padLeft(2, '0')}-${refDate.day.toString().padLeft(2, '0')}",
+        "id": id,
+        "tgl_estimasi_pickup":
+            "${tglEstimasiPickup.year.toString().padLeft(4, '0')}-${tglEstimasiPickup.month.toString().padLeft(2, '0')}-${tglEstimasiPickup.day.toString().padLeft(2, '0')}",
+        "jam_estimasi_pickup": jamEstimasiPickup,
+        "tgl_estimasi_sampai":
+            "${tglEstimasiSampai.year.toString().padLeft(4, '0')}-${tglEstimasiSampai.month.toString().padLeft(2, '0')}-${tglEstimasiSampai.day.toString().padLeft(2, '0')}",
+        "jam_estimasi_sampai": jamEstimasiSampai,
+        "ref_date":
+            "${refDate.year.toString().padLeft(4, '0')}-${refDate.month.toString().padLeft(2, '0')}-${refDate.day.toString().padLeft(2, '0')}",
+        "no_deliv": noDeliv,
+        "ship_via": shipVia,
+        "po_number": poNumber,
+        "alamat_pickup": alamatPickup,
+        "alamat_pengiriman": alamatPengiriman,
+        "memo": memo,
+        "status": status,
+        "tanggal_diterima":
+            "${tanggalDiterima.year.toString().padLeft(4, '0')}-${tanggalDiterima.month.toString().padLeft(2, '0')}-${tanggalDiterima.day.toString().padLeft(2, '0')}",
+        "jam_diterima": jamDiterima,
+        "nama_penerima": namaPenerima,
+        "picture": List<dynamic>.from(picture.map((x) => x.toJson())),
+      };
 
-    "no_deliv": noDeliv,
-    "ship_via": shipVia,
-    "po_number": poNumber,
-    "alamat_pickup": alamatPickup,
-    "alamat_pengiriman": alamatPengiriman,
-    "memo": memo,
-    "status": status,
-    "tanggal_diterima": "${tanggalDiterima.year.toString().padLeft(4, '0')}-${tanggalDiterima.month.toString().padLeft(2, '0')}-${tanggalDiterima.day.toString().padLeft(2, '0')}",
-    "jam_diterima": jamDiterima,
-    "nama_penerima": namaPenerima,
-    "picture": List<dynamic>.from(picture.map((x) => x.toJson())),
-  };
+  factory HistoryDoDetail.fromMap(Map<String, dynamic> map) {
+    return HistoryDoDetail(
+      id: map["id"],
+      tglEstimasiPickup: DateTime.parse(map["tgl_estimasi_pickup"]),
+      jamEstimasiPickup: map["jam_estimasi_pickup"],
+      tglEstimasiSampai: DateTime.parse(map["tgl_estimasi_sampai"]),
+      jamEstimasiSampai: map["jam_estimasi_sampai"],
+      refDate: DateTime.parse(map["ref_date"]),
+      noDeliv: map["no_deliv"],
+      shipVia: map["ship_via"],
+      poNumber: map["po_number"],
+      alamatPickup: map["alamat_pickup"],
+      alamatPengiriman: map["alamat_pengiriman"],
+      memo: map["memo"],
+      status: map["status"],
+      tanggalDiterima: DateTime.parse(map["tanggal_diterima"]),
+      jamDiterima: map["jam_diterima"],
+      namaPenerima: map["nama_penerima"],
+      picture: List<Picture>.from(
+        jsonDecode(
+          map["picture"],
+        ).map(
+          (x) => Picture.fromJson(x),
+        ),
+      ),
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        "id": id,
+
+        "tgl_estimasi_pickup": tglEstimasiPickup.toIso8601String(),
+
+        "jam_estimasi_pickup": jamEstimasiPickup,
+
+        "tgl_estimasi_sampai": tglEstimasiSampai.toIso8601String(),
+
+        "jam_estimasi_sampai": jamEstimasiSampai,
+
+        "ref_date": refDate.toIso8601String(),
+
+        "no_deliv": noDeliv,
+
+        "ship_via": shipVia,
+
+        "po_number": poNumber,
+
+        "alamat_pickup": alamatPickup,
+
+        "alamat_pengiriman": alamatPengiriman,
+
+        "memo": memo,
+
+        "status": status,
+
+        "tanggal_diterima": tanggalDiterima.toIso8601String(),
+
+        "jam_diterima": jamDiterima,
+
+        "nama_penerima": namaPenerima,
+
+        /// SAVE JSON STRING
+        "picture": jsonEncode(
+          picture.map((e) => e.toJson()).toList(),
+        ),
+      };
+
+
+  static DateTime parseDate(
+      dynamic value) {
+
+    if (value == null ||
+        value == '' ||
+        value == '0000-00-00') {
+
+      return DateTime.now();
+    }
+
+    return DateTime.tryParse(
+        value.toString()) ??
+        DateTime.now();
+  }
 }
+
 class Picture {
   String fileFoto;
   String keterangan;
@@ -98,12 +237,14 @@ class Picture {
   });
 
   factory Picture.fromJson(Map<String, dynamic> json) => Picture(
-    fileFoto: json["file_foto"],
-    keterangan: json["keterangan"],
-  );
+        fileFoto: json["file_foto"],
+        keterangan: json["keterangan"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "file_foto": fileFoto,
-    "keterangan": keterangan,
-  };
+        "file_foto": fileFoto,
+        "keterangan": keterangan,
+      };
 }
+
+

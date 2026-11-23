@@ -35,7 +35,7 @@ class WelcomeController extends GetxController {
 
 
   void reqToken() {
-    AuthProvider().reqToken('attamanadriver', 'febrimobile150708', version.value).then((value) {
+    AuthProvider().reqToken('attamanadriver', 'febrimobile150708').then((value) {
       if (kDebugMode) {
         print('status_code token : ${value.statusCode}');
       }

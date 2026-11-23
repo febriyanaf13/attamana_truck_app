@@ -27,7 +27,7 @@ class HistoryDoDetailView extends GetView<HistoryController> {
       ),
       body: Obx(() {
         if (controller.isLoadingHistoryDoDetail.isTrue) {
-          return  Center(
+          return Center(
             child: lottieNotFound(controller.isLoadingHistoryDoDetail.value),
           );
         } else {
@@ -286,7 +286,7 @@ class HistoryDoDetailView extends GetView<HistoryController> {
                                     fontWeight: FontWeight.w400, fontSize: 12),
                               ),
                               Text(
-                                '${controller.historyDoDetail[0].jamEstimasiSampai??'-'} WIB',
+                                '${controller.historyDoDetail[0].jamEstimasiSampai ?? '-'} WIB',
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w500, fontSize: 14),
                               ),
@@ -306,15 +306,13 @@ class HistoryDoDetailView extends GetView<HistoryController> {
                               const Text(
                                 'Tanggal invoice / perpindahan barang',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 12),
+                                    fontWeight: FontWeight.w400, fontSize: 12),
                               ),
                               Text(
-                                DateFormat('d MMMM yyyy')
-                                    .format(controller.historyDoDetail[0].refDate),
+                                DateFormat('d MMMM yyyy').format(
+                                    controller.historyDoDetail[0].refDate),
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 14),
+                                    fontWeight: FontWeight.w500, fontSize: 14),
                               ),
                             ],
                           ),
@@ -334,7 +332,9 @@ class HistoryDoDetailView extends GetView<HistoryController> {
                         const Text(
                           'Pickup image(s)',
                           style: TextStyle(
-                              fontWeight: FontWeight.w400, fontSize: 12),
+                            fontWeight: FontWeight.w400,
+                            fontSize: 12,
+                          ),
                         ),
                         10.height,
                         GetBuilder<HistoryController>(
@@ -343,8 +343,10 @@ class HistoryDoDetailView extends GetView<HistoryController> {
 
                             fotoPickup = controller.historyDoDetail[0].picture
                                 .where(
-                                    (picture) => picture.keterangan == 'PICKUP')
+                                  (picture) => picture.keterangan == 'PICKUP',
+                                )
                                 .toList();
+
                             return SizedBox(
                               height: 100,
                               width: Get.width,
@@ -353,28 +355,51 @@ class HistoryDoDetailView extends GetView<HistoryController> {
                                 scrollDirection: Axis.horizontal,
                                 shrinkWrap: true,
                                 itemBuilder: (BuildContext context, int i) {
-                                  print('picture: ${fotoPickup[i].fileFoto}');
+                                  print(
+                                    'picture: ${fotoPickup[i].fileFoto}',
+                                  );
+
+                                  final imagePath = fotoPickup[i].fileFoto;
+
+                                  final isNetwork =
+                                      imagePath.startsWith('http');
 
                                   return SizedBox(
                                     height: 100,
                                     width: 100,
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(10),
-                                      child: Image.network(
-                                        fotoPickup[i].fileFoto,
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                          return Image.asset(
-                                            'user_profile'.jpg,
-                                            width: 100,
-                                            height: 100,
-                                            fit: BoxFit.fill,
-                                          );
-                                        },
-                                      ),
+                                      child: isNetwork
+                                          ? Image.network(
+                                              imagePath,
+                                              width: 100,
+                                              height: 100,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return Image.asset(
+                                                  'logo_attamana_truck.jpg',
+                                                  width: 100,
+                                                  height: 100,
+                                                  fit: BoxFit.fill,
+                                                );
+                                              },
+                                            )
+                                          : Image.file(
+                                              File(imagePath),
+                                              width: 100,
+                                              height: 100,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return Image.asset(
+                                                  'logo_attamana_truck.jpg',
+                                                  width: 100,
+                                                  height: 100,
+                                                  fit: BoxFit.fill,
+                                                );
+                                              },
+                                            ),
                                     ),
                                   );
                                 },
@@ -395,7 +420,9 @@ class HistoryDoDetailView extends GetView<HistoryController> {
                         const Text(
                           'Delivery image(s)',
                           style: TextStyle(
-                              fontWeight: FontWeight.w400, fontSize: 12),
+                            fontWeight: FontWeight.w400,
+                            fontSize: 12,
+                          ),
                         ),
                         10.height,
                         GetBuilder<HistoryController>(
@@ -403,9 +430,11 @@ class HistoryDoDetailView extends GetView<HistoryController> {
                             var fotoPickup = <Picture>[];
 
                             fotoPickup = controller.historyDoDetail[0].picture
-                                .where((picture) =>
-                                    picture.keterangan == 'DROP OFF')
+                                .where(
+                                  (picture) => picture.keterangan == 'DROP OFF',
+                                )
                                 .toList();
+
                             return SizedBox(
                               height: 100,
                               width: Get.width,
@@ -414,26 +443,47 @@ class HistoryDoDetailView extends GetView<HistoryController> {
                                 scrollDirection: Axis.horizontal,
                                 shrinkWrap: true,
                                 itemBuilder: (BuildContext context, int i) {
+                                  final imagePath = fotoPickup[i].fileFoto;
+
+                                  final isNetwork =
+                                      imagePath.startsWith('http');
+
                                   return SizedBox(
                                     height: 100,
                                     width: 100,
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(10),
-                                      child: Image.network(
-                                        fotoPickup[i].fileFoto,
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                          return Image.asset(
-                                            'user_profile'.jpg,
-                                            width: 100,
-                                            height: 100,
-                                            fit: BoxFit.fill,
-                                          );
-                                        },
-                                      ),
+                                      child: isNetwork
+                                          ? Image.network(
+                                              imagePath,
+                                              width: 100,
+                                              height: 100,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return Image.asset(
+                                                  'logo_attamana_truck.jpg',
+                                                  width: 100,
+                                                  height: 100,
+                                                  fit: BoxFit.fill,
+                                                );
+                                              },
+                                            )
+                                          : Image.file(
+                                              File(imagePath),
+                                              width: 100,
+                                              height: 100,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return Image.asset(
+                                                  'logo_attamana_truck.jpg',
+                                                  width: 100,
+                                                  height: 100,
+                                                  fit: BoxFit.fill,
+                                                );
+                                              },
+                                            ),
                                     ),
                                   );
                                 },

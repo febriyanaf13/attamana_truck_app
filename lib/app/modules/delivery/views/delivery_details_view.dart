@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:action_slider/action_slider.dart';
-import 'package:attamana_truck_app/app/utils/constants.dart';
 import 'package:attamana_truck_app/app/utils/extension_utils.dart';
 import 'package:flutter/material.dart';
 
@@ -10,7 +9,6 @@ import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 
 // import 'package:slider_button/slider_button.dart';
-import 'package:timeline_tile/timeline_tile.dart';
 
 import '../../../components/widget/custom_lottie.dart';
 import '../../../style/colors.dart';
@@ -32,7 +30,7 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
       body: Obx(
         () => SizedBox(
           height: Get.height,
-          child: controller.detailDo.isEmpty
+          child: controller.detailDo.value == null
               ? Center(
                   child: lottieNotFound(controller.isLoadingDetailDo.value))
               : SingleChildScrollView(
@@ -65,7 +63,7 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      controller.detailDo[0].noDeliv,
+                                      controller.detailDo.value!.noDeliv,
                                       style: const TextStyle(
                                           fontWeight: FontWeight.w500,
                                           fontSize: 16),
@@ -104,7 +102,7 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                                     borderRadius: BorderRadius.circular(5),
                                     color: kWarningrColor.withOpacity(0.1)),
                                 child: Text(
-                                  controller.detailDo[0].status,
+                                  controller.detailDo.value!.status,
                                   style: const TextStyle(
                                       fontSize: 10,
                                       color: kWarningrColor,
@@ -138,7 +136,7 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                             10.width,
                             Expanded(
                               child: Text(
-                                controller.detailDo[0].alamatPickup,
+                                controller.detailDo.value!.alamatPickup,
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w500, fontSize: 14),
                                 maxLines: 2,
@@ -169,7 +167,7 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                             10.width,
                             Expanded(
                               child: Text(
-                                controller.detailDo[0].alamatPengiriman,
+                                controller.detailDo.value!.alamatPengiriman,
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w500, fontSize: 14),
                               ),
@@ -191,7 +189,7 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                                         fontSize: 12),
                                   ),
                                   Text(
-                                    controller.detailDo[0].memo,
+                                    controller.detailDo.value!.memo,
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w500,
                                         fontSize: 14),
@@ -210,7 +208,7 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                                         fontSize: 12),
                                   ),
                                   Text(
-                                    controller.detailDo[0].namaPenerima,
+                                    controller.detailDo.value!.namaPenerima,
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w500,
                                         fontSize: 14),
@@ -236,7 +234,7 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                                   ),
                                   Text(
                                     DateFormat('d MMMM yyyy').format(controller
-                                        .detailDo[0].tglEstimasiPickup),
+                                        .detailDo.value!.tglEstimasiPickup),
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w500,
                                         fontSize: 14),
@@ -255,7 +253,7 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                                         fontSize: 12),
                                   ),
                                   Text(
-                                    '${controller.detailDo[0].jamEstimasiPickup} WIB',
+                                    '${controller.detailDo.value!.jamEstimasiPickup} WIB',
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w500,
                                         fontSize: 14),
@@ -281,7 +279,7 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                                   ),
                                   Text(
                                     DateFormat('d MMMM yyyy').format(controller
-                                        .detailDo[0].tglEstimasiSampai),
+                                        .detailDo.value!.tglEstimasiSampai),
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w500,
                                         fontSize: 14),
@@ -300,7 +298,7 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                                         fontSize: 12),
                                   ),
                                   Text(
-                                    '${controller.detailDo[0].jamEstimasiSampai ?? '-'} WIB',
+                                    '${controller.detailDo.value!.jamEstimasiSampai ?? '-'} WIB',
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w500,
                                         fontSize: 14),
@@ -325,8 +323,8 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                                         fontSize: 12),
                                   ),
                                   Text(
-                                    DateFormat('d MMMM yyyy')
-                                        .format(controller.detailDo[0].refDate),
+                                    DateFormat('d MMMM yyyy').format(
+                                        controller.detailDo.value!.refDate),
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w500,
                                         fontSize: 14),
@@ -343,7 +341,7 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                           ],
                         ),
                         50.height,
-                        controller.detailDo[0].status == "PICKUP"
+                        controller.detailDo.value!.status == "PICKUP"
                             ? Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -669,29 +667,36 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                             //Do something here OnSlide
 
                             var statusDo = "";
-                            switch (controller.detailDo[0].status) {
+                            switch (controller.detailDo.value!.status) {
                               case 'PICKUP':
                                 return controller.postUpdateSelesaiLoadingDo(
-                                    controller.detailDo[0].id,
+                                    controller.detailDo.value!.noDeliv,
+                                    controller.detailDo.value!.id,
                                     'ON DELIVERY',
                                     controllerSlider);
                               // statusDo = 'ON DELIVERY';
                               // break;
                               case 'ON DELIVERY':
+                                // return controller.postUpdateDeliveredDo(controller.detailDo.value!.noDeliv,
+                                //     controller.detailDo.value!.id,
+                                //     'DELIVERED',
+                                //     controllerSlider);
                                 return controller.postUpdateDeliveredDo(
-                                    controller.detailDo[0].id,
-                                    'DELIVERED',
-                                    controllerSlider);
+                                  noDeliv: controller.detailDo.value!.noDeliv,
+                                  doId: controller.detailDo.value!.id,
+                                  status: 'DELIVERED',
+                                  controllerSlider: controllerSlider,
+                                );
                               // statusDo = 'DELIVERED';
                               // break;
                             }
                             return null;
                             // return controller.postUpdateSelesaiLoadingDo(
-                            //     controller.detailDo[0].id, statusDo);
+                            //     controller.detailDo.value!.id, statusDo);
                             // return true;
                           },
                           child: Text(
-                            controller.detailDo[0].status == "PICKUP"
+                            controller.detailDo.value!.status == "PICKUP"
                                 ? "Slide to start delivery"
                                 : "Slide to finish job",
                             style: const TextStyle(
@@ -709,25 +714,25 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                         //   action: () async {
                         //     //Do something here OnSlide
                         //     var statusDo = "";
-                        //     switch (controller.detailDo[0].status) {
+                        //     switch (controller.detailDo.value!.status) {
                         //       case 'PICKUP':
                         //         return controller.postUpdateSelesaiLoadingDo(
-                        //             controller.detailDo[0].id, 'ON DELIVERY');
+                        //             controller.detailDo.value!.id, 'ON DELIVERY');
                         //       // statusDo = 'ON DELIVERY';
                         //       // break;
                         //       case 'ON DELIVERY':
                         //         return controller.postUpdateDeliveredDo(
-                        //             controller.detailDo[0].id, 'DELIVERED');
+                        //             controller.detailDo.value!.id, 'DELIVERED');
                         //       // statusDo = 'DELIVERED';
                         //       // break;
                         //     }
                         //     return null;
                         //     // return controller.postUpdateSelesaiLoadingDo(
-                        //     //     controller.detailDo[0].id, statusDo);
+                        //     //     controller.detailDo.value!.id, statusDo);
                         //     // return true;
                         //   },
                         //   label: Text(
-                        //     controller.detailDo[0].status == "PICKUP"
+                        //     controller.detailDo.value!.status == "PICKUP"
                         //         ? "Slide to start delivery"
                         //         : "Slide to finish job",
                         //     style: const TextStyle(

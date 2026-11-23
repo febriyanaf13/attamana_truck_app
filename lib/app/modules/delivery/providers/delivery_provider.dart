@@ -77,4 +77,18 @@ class DeliveryProvider extends GetConnect {
     }
     return post(api, body, headers: headers);
   }
+
+  Future<Response> syncDelivery(Map<String, dynamic> body) async {
+    var headers = {
+      "Authorization": "Bearer $token",
+    };
+
+    var api = Api.sinkronisasiDoLokal;
+
+    return await post(
+      api,
+      body,
+      headers: headers,
+    );
+  }
 }

@@ -81,8 +81,8 @@ class HomeView extends GetView<HomeController> {
                   10.height,
                   GestureDetector(
                     onTap: () {
-                      var doId = storage.read(kDoId);
-                      deliveryC.getDetailDeliveryOrder(doId);
+                      // var doId = storage.read(kDoId);
+                      // deliveryC.getDetailDeliveryOrder(doId);
                       deliveryC.getListOnGoingDeliveryOrder();
                       Get.toNamed(Routes.DELIVERY_ONGOING);
                     },
@@ -183,6 +183,12 @@ class HomeView extends GetView<HomeController> {
                         ),
                       ],
                     ),
+                  ),
+                  20.height,
+                  const Text(
+                    '*Pull down to get new tasks for drivers.',
+                    style: TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w200, color: Colors.red),
                   ),
                   50.height,
                   Row(

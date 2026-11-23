@@ -85,4 +85,42 @@ class HistoryDo {
         "jam_diterima": jamDiterima,
         "nama_penerima": namaPenerima,
       };
+
+  factory HistoryDo.fromMap(Map<String, dynamic> map) => HistoryDo(
+        id: map["id"],
+        tglEstimasiPickup: DateTime.parse(map["tgl_estimasi_pickup"]),
+        jamEstimasiPickup: map["jam_estimasi_pickup"],
+        tglEstimasiSampai: DateTime.parse(map["tgl_estimasi_sampai"]),
+        jamEstimasiSampai: map["jam_estimasi_sampai"],
+        refDate: DateTime.parse(map["ref_date"]),
+        noDeliv: map["no_deliv"],
+        shipVia: map["ship_via"],
+        poNumber: map["po_number"],
+        alamatPickup: map["alamat_pickup"],
+        alamatPengiriman: map["alamat_pengiriman"],
+        memo: map["memo"],
+        status: map["status"],
+        tanggalDiterima: DateTime.parse(map["tanggal_diterima"]),
+        jamDiterima: map["jam_diterima"],
+        namaPenerima: map["nama_penerima"],
+      );
+
+  Map<String, dynamic> toMap() => {
+        "id": id,
+        "tgl_estimasi_pickup": tglEstimasiPickup.toIso8601String(),
+        "jam_estimasi_pickup": jamEstimasiPickup,
+        "tgl_estimasi_sampai": tglEstimasiSampai.toIso8601String(),
+        "jam_estimasi_sampai": jamEstimasiSampai,
+        "ref_date": refDate.toIso8601String(),
+        "no_deliv": noDeliv,
+        "ship_via": shipVia,
+        "po_number": poNumber,
+        "alamat_pickup": alamatPickup,
+        "alamat_pengiriman": alamatPengiriman,
+        "memo": memo,
+        "status": status,
+        "tanggal_diterima": tanggalDiterima.toIso8601String(),
+        "jam_diterima": jamDiterima,
+        "nama_penerima": namaPenerima,
+      };
 }

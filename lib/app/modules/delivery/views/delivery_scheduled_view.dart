@@ -433,39 +433,49 @@ class DeliveryScheduledView extends GetView<DeliveryController> {
                                               ],
                                             ),
                                             20.height,
-                                            const Spacer(),
-                                            ActionSlider.standard(
-                                              rolling: false,
-                                              width: 300,
-                                              backgroundColor: Colors.white,
-                                              reverseSlideAnimationCurve:
-                                                  Curves.easeInOut,
-                                              reverseSlideAnimationDuration:
-                                                  const Duration(
-                                                      milliseconds: 500),
-                                              toggleColor: Colors.white,
-                                              icon: Image.asset(
-                                                'truck'.png,
-                                                scale: 10,
-                                                color: kSuccessColor,
-                                              ),
-                                              action: (controllerSlider) async {
-                                                //Do something here OnSlide
-                                                ///Do something here OnSlide
-                                                return controller
-                                                    .postUpdatePickupDo(
-                                                        controller
-                                                            .listDo[index].id,
-                                                        "PICKUP",
-                                                        controllerSlider);
-                                                // return true;
-                                              },
-                                              child: const Text(
-                                                "Slide to accept job",
-                                                style: TextStyle(
-                                                    color: Color(0xff4a4a4a),
-                                                    fontWeight: FontWeight.w500,
-                                                    fontSize: 17),
+                                            // const Spacer(),
+                                            Align(
+                                              alignment: Alignment.bottomCenter,
+                                              child: ActionSlider.standard(
+                                                rolling: false,
+                                                width: 300,
+                                                backgroundColor: Colors.white,
+                                                reverseSlideAnimationCurve:
+                                                    Curves.easeInOut,
+                                                reverseSlideAnimationDuration:
+                                                    const Duration(
+                                                        milliseconds: 500),
+                                                toggleColor: Colors.white,
+                                                icon: Image.asset(
+                                                  'truck'.png,
+                                                  scale: 10,
+                                                  color: kSuccessColor,
+                                                ),
+                                                action: (controllerSlider) async {
+                                                  try {
+                                                    controllerSlider.loading();
+
+                                                    final result = await controller.postUpdatePickupDo(
+                                                      controller.listDo[index].noDeliv,  controller.listDo[index].id,
+                                                      "PICKUP"
+                                                    );
+
+                                                    if (result) {
+                                                      controllerSlider.success();
+                                                    } else {
+                                                      controllerSlider.reset();
+                                                    }
+                                                  } catch (e) {
+                                                    controllerSlider.reset();
+                                                  }
+                                                },
+                                                child: const Text(
+                                                  "Slide to accept job",
+                                                  style: TextStyle(
+                                                      color: Color(0xff4a4a4a),
+                                                      fontWeight: FontWeight.w500,
+                                                      fontSize: 17),
+                                                ),
                                               ),
                                             ),
                                             // Center(
@@ -498,7 +508,7 @@ class DeliveryScheduledView extends GetView<DeliveryController> {
                                             //       ),
                                             //       radius: 10,
                                             //     )),
-                                            const Spacer(),
+                                            // const Spacer(),
                                             20.height
                                           ],
                                         ),
