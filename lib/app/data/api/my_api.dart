@@ -17,4 +17,9 @@ abstract class Api {
   static const historyDo = '$baseUrl/list_history_do';
   static const historyDoDetail = '$baseUrl/detail_do';
   static const sinkronisasiDoLokal = '$baseUrl/sinkronisasi_do_lokal';
+
+  // VERSI 52: notifikasi job (Firebase) — endpoint sama dengan aplikasi sales
+  static const notifikasiPerangkat = '$baseUrl/notifikasi/perangkat';
+  static const notifikasiPerangkatHapus = '$baseUrl/notifikasi/perangkat/hapus';
+  static const notifikasiBaca = '$baseUrl/notifikasi/baca';
 }

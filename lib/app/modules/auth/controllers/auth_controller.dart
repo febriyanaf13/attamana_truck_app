@@ -12,6 +12,7 @@ import '../../../style/colors.dart';
 import '../../../utils/constants.dart';
 import '../../../utils/string_utils.dart';
 import '../providers/auth_provider.dart';
+import '../../../services/notifikasi_service.dart';
 
 class AuthController extends GetxController {
   //TODO: Implement AuthController
@@ -58,7 +59,8 @@ class AuthController extends GetxController {
     if (formKey.currentState!.validate()) {
       isLoadingLogin.toggle();
       AuthProvider()
-          .postLogin(usernameController.text, passwordController.text, token)
+          .postLogin(usernameController.text, passwordController.text,
+              storage.read('token') ?? '') // VERSI 50: token terbaru
           .then((value) async {
         var response = value.body;
         if (kDebugMode) {
@@ -165,6 +167,10 @@ class AuthController extends GetxController {
       btnOkText: 'Ya',
       btnOkIcon: Icons.check,
       btnOkOnPress: () {
+        // VERSI 52: HP berhenti menerima notifikasi job user ini (token dibaca sebelum status login dihapus)
+        if (Get.isRegistered<NotifikasiService>()) {
+          NotifikasiService.to.hapusToken();
+        }
         storage.remove(kLogin);
         storage.write(kSesionAuth, false);
         Get.offAllNamed(Routes.LOGIN);
