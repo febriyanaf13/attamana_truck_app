@@ -60,9 +60,10 @@ class HistoryView extends GetView<HistoryController> {
                                           fontSize: 14,
                                           fontWeight: FontWeight.w500),
                                     ),
-                                    const Text(
-                                      'Receipient: Paul Pogba',
-                                      style: TextStyle(
+                                    Text(
+                                      // VERSI 50: dulu tertulis nama contoh, kini nama penerima sebenarnya
+                                      'Receipient: ${controller.listHistoryDo[index].namaPenerima}',
+                                      style: const TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w500),
                                     ),

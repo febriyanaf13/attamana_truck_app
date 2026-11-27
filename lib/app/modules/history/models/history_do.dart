@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../delivery/models/delivery_order.dart' show tanggalAman, teksAman;
+
 List<HistoryDo> historyDoFromJson(List lst) =>
     List<HistoryDo>.from(lst.map((x) => HistoryDo.fromJson(x)));
 
@@ -46,21 +48,21 @@ class HistoryDo {
 
   factory HistoryDo.fromJson(Map<String, dynamic> json) => HistoryDo(
         id: json["id"],
-        tglEstimasiPickup: DateTime.parse(json["tgl_estimasi_pickup"]),
-        jamEstimasiPickup: json["jam_estimasi_pickup"],
-        tglEstimasiSampai: DateTime.parse(json["tgl_estimasi_sampai"]),
-        jamEstimasiSampai: json["jam_estimasi_sampai"],
-        refDate: DateTime.parse(json["ref_date"] ?? '0000-00-00'),
-        noDeliv: json["no_deliv"],
-        shipVia: json["ship_via"],
-        poNumber: json["po_number"],
-        alamatPickup: json["alamat_pickup"],
-        alamatPengiriman: json["alamat_pengiriman"],
-        memo: json["memo"],
-        status: json["status"],
-        tanggalDiterima: DateTime.parse(json["tanggal_diterima"]),
-        jamDiterima: json["jam_diterima"],
-        namaPenerima: json["nama_penerima"],
+        tglEstimasiPickup: tanggalAman(json["tgl_estimasi_pickup"]),
+        jamEstimasiPickup: teksAman(json["jam_estimasi_pickup"]),
+        tglEstimasiSampai: tanggalAman(json["tgl_estimasi_sampai"]),
+        jamEstimasiSampai: teksAman(json["jam_estimasi_sampai"]),
+        refDate: tanggalAman(json["ref_date"]),
+        noDeliv: teksAman(json["no_deliv"]),
+        shipVia: teksAman(json["ship_via"]),
+        poNumber: teksAman(json["po_number"]),
+        alamatPickup: teksAman(json["alamat_pickup"]),
+        alamatPengiriman: teksAman(json["alamat_pengiriman"]),
+        memo: teksAman(json["memo"]),
+        status: teksAman(json["status"]),
+        tanggalDiterima: tanggalAman(json["tanggal_diterima"]),
+        jamDiterima: teksAman(json["jam_diterima"]),
+        namaPenerima: teksAman(json["nama_penerima"]),
       );
 
   Map<String, dynamic> toJson() => {
@@ -88,21 +90,21 @@ class HistoryDo {
 
   factory HistoryDo.fromMap(Map<String, dynamic> map) => HistoryDo(
         id: map["id"],
-        tglEstimasiPickup: DateTime.parse(map["tgl_estimasi_pickup"]),
-        jamEstimasiPickup: map["jam_estimasi_pickup"],
-        tglEstimasiSampai: DateTime.parse(map["tgl_estimasi_sampai"]),
-        jamEstimasiSampai: map["jam_estimasi_sampai"],
-        refDate: DateTime.parse(map["ref_date"]),
-        noDeliv: map["no_deliv"],
-        shipVia: map["ship_via"],
-        poNumber: map["po_number"],
-        alamatPickup: map["alamat_pickup"],
-        alamatPengiriman: map["alamat_pengiriman"],
-        memo: map["memo"],
-        status: map["status"],
-        tanggalDiterima: DateTime.parse(map["tanggal_diterima"]),
-        jamDiterima: map["jam_diterima"],
-        namaPenerima: map["nama_penerima"],
+        tglEstimasiPickup: tanggalAman(map["tgl_estimasi_pickup"]),
+        jamEstimasiPickup: teksAman(map["jam_estimasi_pickup"]),
+        tglEstimasiSampai: tanggalAman(map["tgl_estimasi_sampai"]),
+        jamEstimasiSampai: teksAman(map["jam_estimasi_sampai"]),
+        refDate: tanggalAman(map["ref_date"]),
+        noDeliv: teksAman(map["no_deliv"]),
+        shipVia: teksAman(map["ship_via"]),
+        poNumber: teksAman(map["po_number"]),
+        alamatPickup: teksAman(map["alamat_pickup"]),
+        alamatPengiriman: teksAman(map["alamat_pengiriman"]),
+        memo: teksAman(map["memo"]),
+        status: teksAman(map["status"]),
+        tanggalDiterima: tanggalAman(map["tanggal_diterima"]),
+        jamDiterima: teksAman(map["jam_diterima"]),
+        namaPenerima: teksAman(map["nama_penerima"]),
       );
 
   Map<String, dynamic> toMap() => {

@@ -16,7 +16,8 @@ class HistoryController extends GetxController {
   //TODO: Implement HistoryController
 
   //data form storage
-  var userId = storage.read(kUserId);
+  // VERSI 50: dibaca setiap dipakai
+  dynamic get userId => storage.read(kUserId);
 
   //list history
   var listHistoryDo = <HistoryDo>[].obs;

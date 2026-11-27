@@ -16,7 +16,9 @@ import 'package:intl/intl.dart';
 import 'package:nb_utils/nb_utils.dart';
 
 import '../../../components/dialog/custom_dialog.dart';
+import '../../../data/api/api_client.dart';
 import '../../../data/local/delivery_order_local.dart';
+import '../../../data/repository/sync_repository.dart';
 import '../../../data/local/history_do_detail_local.dart';
 import '../../../data/local/history_do_local.dart';
 import '../../../data/models/pending_sync.dart';
@@ -59,7 +61,8 @@ class DeliveryController extends GetxController {
   Rxn<ListDo> detailDo = Rxn<ListDo>();
 
   //storage
-  var userId = storage.read(kUserId);
+  // VERSI 50: dibaca setiap dipakai (controller tetap hidup walau user logout / ganti akun)
+  dynamic get userId => storage.read(kUserId);
 
   //repository
   final repository = DeliveryOrderRepository();
@@ -91,6 +94,8 @@ class DeliveryController extends GetxController {
     update();
   }
 
+  // VERSI 50.1: foto diperkecil maks 1280 px (kualitas 50%) supaya ukuran ~150-300 KB dan tidak ditolak
+  // batas upload server (dulu resolusi penuh kamera, 1-3 MB per foto).
   Future<void> pickImages(status) async {
     try {
       showModalBottomSheet(
@@ -108,7 +113,7 @@ class DeliveryController extends GetxController {
                       Navigator.pop(context);
                       try {
                         final List<XFile>? selectedImages = await imagePicker
-                            .pickMultiImage(limit: 2, imageQuality: 50);
+                            .pickMultiImage(limit: 2, imageQuality: 50, maxWidth: 1280, maxHeight: 1280);
                         if (selectedImages!.isNotEmpty) {
                           if (selectedImages.length == 2) {
                             if (status == "PICKUP") {
@@ -148,13 +153,13 @@ class DeliveryController extends GetxController {
                       try {
                         if (status == "PICKUP") {
                           final photo = await ImagePicker().pickImage(
-                              source: ImageSource.camera, imageQuality: 50);
+                              source: ImageSource.camera, imageQuality: 50, maxWidth: 1280, maxHeight: 1280);
                           if (photo == null) return;
                           final image = XFile(photo.path);
                           imageFileListPickup?.add(image);
                         } else if (status == "DELIVERED") {
                           final photo = await ImagePicker().pickImage(
-                              source: ImageSource.camera, imageQuality: 50);
+                              source: ImageSource.camera, imageQuality: 50, maxWidth: 1280, maxHeight: 1280);
                           if (photo == null) return;
                           final image = XFile(photo.path);
                           imageFileListDelivered?.add(image);
@@ -175,155 +180,230 @@ class DeliveryController extends GetxController {
     update();
   }
 
-  // Future<void> getListDeliveryOrder() async {
-  //   isLoadingListDo.toggle();
-  //   var body = {"userid": userId};
-  //   if (kDebugMode) {
-  //     print(body);
-  //   }
-  //   DeliveryProvider().getListDo(body).then(
-  //         (value) {
-  //       var response = value.body;
-  //       if (kDebugMode) {
-  //         print("Response Delivery Order : $response");
-  //       }
-  //       if (value.status.isOk) {
-  //         var success = value.body['success'];
-  //         var message = value.body['message'];
-  //         if (success == true) {
-  //           var data = value.body['data'];
-  //           listDo.value = listDoFromJson(data);
-  //         } else {
-  //           // dialogWarning('Gagal', message);
-  //         }
-  //       } else if (value.status.isServerError) {
-  //         // dialogError('Terjadi Kesalahan',
-  //         //     'Terjadi masalah pada server / koneksi internet lambat');
-  //       } else if (value.status.connectionError) {
-  //         // dialogError('Tidak ada koneksi',
-  //         //     'Jaringan internet bermasalah, silahkan cek koneksi internet!');
-  //       }
-  //       isLoadingListDo.toggle();
-  //     },
-  //   );
-  // }
+  // ===================================================================================
+  // VERSI 50: daftar DO dari server (cache SQLite hanya untuk offline)
+  // ===================================================================================
 
   Future<void> getListDeliveryOrder() async {
-    isLoadingListDo.toggle();
-
+    isLoadingListDo.value = true;
     try {
       final result = await repository.getListDeliveryOrder(userId);
-
-      /// FILTER HANYA STATUS CONFIRM
-      final filtered = result.where((e) => e.status == "CONFIRM").toList();
-
-      listDo.assignAll(filtered);
-
-      print(
-        'list confirm ${jsonEncode(
-          listDo.map((e) => e.toJson()).toList(),
-        )}',
-      );
+      listDo.assignAll(result.where((e) => e.status == "CONFIRM").toList());
     } catch (e) {
-      print('salahnya $e');
+      if (kDebugMode) print('list confirm error $e');
+    } finally {
+      isLoadingListDo.value = false;
     }
-
-    isLoadingListDo.toggle();
   }
 
-  // Future<void> getListOnGoingDeliveryOrder() async {
-  //   isLoadingListOnGoingDo.toggle();
-  //   var body = {"userid": userId};
-  //   DeliveryProvider().getListOnGoingDo(body).then(
-  //     (value) {
-  //       var response = value.body;
-  //       if (kDebugMode) {
-  //         print("Response list On Going Delivery Order : $response");
-  //       }
-  //       if (value.status.isOk) {
-  //         var success = value.body['success'];
-  //         var message = value.body['message'];
-  //         if (success == true) {
-  //           var data = value.body['data'];
-  //           listOnGoingDo.value = listDoFromJson(data);
-  //           print(listOnGoingDo);
-  //         } else {
-  //           // dialogWarning('Gagal', message);
-  //         }
-  //       } else if (value.status.isServerError) {
-  //         // dialogError('Terjadi Kesalahan',
-  //         //     'Terjadi masalah pada server / koneksi internet lambat');
-  //       } else if (value.status.connectionError) {
-  //         // dialogError('Tidak ada koneksi',
-  //         //     'Jaringan internet bermasalah, silahkan cek koneksi internet!');
-  //       }
-  //       isLoadingListOnGoingDo.toggle();
-  //     },
-  //   );
-  // }
   Future<void> getListOnGoingDeliveryOrder() async {
-    isLoadingListOnGoingDo.toggle();
-
+    isLoadingListOnGoingDo.value = true;
     try {
-      listOnGoingDo.value = await repository.getListOnGoingDeliveryOrder();
-
-      print("list on going : ${(listOnGoingDo)}");
-      // print(
-      //   'list dooo ${jsonEncode(
-      //     listOnGoingDo.map((e) => e.toJson()).toList(),
-      //   )}',
-      // );
+      // dulu hanya dari SQLite: DO yang di-pickup lewat web / HP lain tidak pernah tampil
+      listOnGoingDo.assignAll(
+          await repository.getListOnGoingDeliveryOrder(userId));
     } catch (e) {
-      print('ongoing $e');
+      if (kDebugMode) print('ongoing $e');
+    } finally {
+      isLoadingListOnGoingDo.value = false;
     }
-
-    isLoadingListOnGoingDo.toggle();
   }
 
-  // void getDetailDeliveryOrder(id) {
-  //   isLoadingDetailDo.toggle();
-  //   DeliveryProvider().getDetailDo(id).then(
-  //     (value) {
-  //       if (value.status.isOk) {
-  //         var success = value.body['success'];
-  //         var message = value.body['message'];
-  //         if (success == true) {
-  //           var data = value.body['data'];
-  //           detailDo.value = listDoFromJson(data);
-  //         } else {
-  //           // dialogWarning('Gagal', message);
-  //         }
-  //       } else if (value.status.isServerError) {
-  //         // dialogError('Terjadi Kesalahan',
-  //         //     'Terjadi masalah pada server / koneksi internet lambat');
-  //       } else if (value.status.connectionError) {
-  //         // dialogError('Tidak ada koneksi',
-  //         //     'Jaringan internet bermasalah, silahkan cek koneksi internet!');
-  //       }
-  //       isLoadingDetailDo.toggle();
-  //     },
-  //   );
-  // }
   Future<void> getDetailDeliveryOrder(String id) async {
-    isLoadingDetailDo.toggle();
-
+    isLoadingDetailDo.value = true;
     try {
       detailDo.value = await repository.getDetailDeliveryOrder(id);
     } catch (e) {
-      print(e);
+      if (kDebugMode) print(e);
+    } finally {
+      isLoadingDetailDo.value = false;
     }
-
-    isLoadingDetailDo.toggle();
   }
 
   Future<void> getPendingData() async {
     final result = await pendingLocal.getPending();
-
     pendingList.assignAll(result);
   }
 
-  postUpdatePickupDo(noDeliv, doId, status) {
+  Future<void> _segarkanSemua() async {
+    await getListOnGoingDeliveryOrder();
+    await getListDeliveryOrder();
+    historyC.getListHistoryDo();
+    await getPendingData();
+  }
+
+  // ===================================================================================
+  // VERSI 50: proses langkah DO (sama dengan alur web)
+  //   CONFIRM --pickup--> PICKUP --selesai loading (foto)--> ON DELIVERY --delivered (nama + foto)--> DELIVERED
+  // Online : langsung ke API (pickup_do / loading_do / delivered_do). Server menjalankan alur web
+  //          (cek status, tutup buku, stok keluar, rencana kirim, jurnal HPP, foto).
+  //          Bila ditolak server, pesan ditampilkan dan data di HP TIDAK diubah.
+  // Offline: langkah disimpan di antrean (pending_sync) beserta foto, status di HP diperbarui,
+  //          dan dikirim saat online (otomatis saat halaman beranda dimuat / menu Sinkronisasi).
+  // ===================================================================================
+
+  String _tgl(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
+  String _jam(DateTime d) => DateFormat('HH:mm:ss').format(d);
+
+  Future<List<String>> _simpanFoto(List<XFile>? files) async {
+    final hasil = <String>[];
+    for (final f in files ?? <XFile>[]) {
+      hasil.add(await FileHelper.saveImagePermanently(f.path));
+    }
+    return hasil;
+  }
+
+  /// tambah / perbarui 1 langkah di antrean offline DO ini
+  Future<void> _antrekan(ListDo d, String langkah, Map<String, dynamic> isi) async {
+    final ada = await pendingLocal.getByNoDeliv(d.noDeliv);
+    Map<String, dynamic> payload = {
+      "no_deliv": d.noDeliv,
+      "delivery_order_id": d.id,
+      "pickup": null,
+      "ongoing": null,
+      "delivered": null,
+    };
+    if (ada != null) {
+      try {
+        payload = Map<String, dynamic>.from(jsonDecode(ada.payload));
+      } catch (_) {}
+    }
+    payload['no_deliv'] = d.noDeliv;
+    payload[langkah] = isi;
+    await pendingLocal.upsert(PendingSync(
+      id: ada?.id,
+      deliveryOrderId: ada?.deliveryOrderId ?? d.id,
+      payload: jsonEncode(payload),
+      createdAt: ada?.createdAt ?? DateTime.now().toString(),
+      noDeliv: d.noDeliv,
+    ));
+  }
+
+  /// VERSI 50.1: dijalankan bergiliran dengan sinkronisasi (kunci bersama di SyncRepository) supaya
+  /// antrean DO ini tidak dibaca / dihapus proses lain di tengah jalan.
+  Future<_HasilLangkah> _prosesLangkah({
+    required ListDo d,
+    required String langkah, // pickup | ongoing | delivered
+    required String statusTujuan,
+    List<String> foto = const [],
+    String? nama,
+  }) =>
+      SyncRepository.eksklusif(() => _prosesLangkahDalamKunci(
+          d: d, langkah: langkah, statusTujuan: statusTujuan, foto: foto, nama: nama));
+
+  Future<_HasilLangkah> _prosesLangkahDalamKunci({
+    required ListDo d,
+    required String langkah,
+    required String statusTujuan,
+    List<String> foto = const [],
+    String? nama,
+  }) async {
+    final now = DateTime.now();
+    final tgl = _tgl(now);
+    final jam = _jam(now);
+    final isi = <String, dynamic>{
+      "status": statusTujuan,
+      "tanggal": tgl,
+      "jam": jam,
+    };
+    if (langkah != 'pickup') isi['files'] = foto;
+    if (nama != null) isi['nama_penerima'] = nama;
+
+    // masih ada langkah sebelumnya yang belum terkirim -> ikut antrean supaya urutan terjaga
+    final antre = await pendingLocal.getByNoDeliv(d.noDeliv);
+    if (antre != null) {
+      await _antrekan(d, langkah, isi);
+      final p = await pendingLocal.getByNoDeliv(d.noDeliv);
+      final r = await SyncRepository().syncSatuDalamKunci(userId, p!);
+      if (r.tertunda) {
+        await DeliveryOrderLocal().updateStatus(
+            noDeliv: d.noDeliv, status: statusTujuan, namaPenerima: nama);
+        return _HasilLangkah.offline(r.pesan);
+      }
+      return r.berhasil
+          ? _HasilLangkah.ok(r.pesan, r.statusDo)
+          : _HasilLangkah.ditolak(r.pesan, r.statusDo);
+    }
+
+    final provider = DeliveryProvider();
+    // (tipe Response dibiarkan diinfer: nama Response bentrok antara get & nb_utils)
+    final resp = langkah == 'pickup'
+        ? await provider.postPickupDo(
+            userId: userId, doId: d.id, tanggal: tgl, jam: jam)
+        : (langkah == 'ongoing'
+            ? await provider.postUpdateSelesaiLoadingDo(
+                userId: userId, doId: d.id, foto: foto, tanggal: tgl, jam: jam)
+            : await provider.postUpdateDeliveredDo(
+                userId: userId,
+                doId: d.id,
+                namaPenerima: nama ?? '',
+                foto: foto,
+                tanggal: tgl,
+                jam: jam));
+    if (kDebugMode) print('$langkah ${d.noDeliv}: ${resp.statusCode} ${resp.body}');
+
+    // tidak ada koneksi, atau gangguan sementara di server (VERSI 50.1: coba_lagi / HTTP 5xx)
+    // -> simpan di antrean, dikirim ulang otomatis
+    if (ApiClient.gagalKoneksi(resp) || ApiClient.cobaLagi(resp)) {
+      await _antrekan(d, langkah, isi);
+      await DeliveryOrderLocal().updateStatus(
+          noDeliv: d.noDeliv, status: statusTujuan, namaPenerima: nama);
+      return _HasilLangkah.offline(ApiClient.pesan(resp));
+    }
+
+    final statusDo = (resp.body is Map && resp.body['status_do'] != null)
+        ? resp.body['status_do'].toString()
+        : '';
+    if (ApiClient.sukses(resp)) {
+      await DeliveryOrderLocal().updateStatus(
+          noDeliv: d.noDeliv,
+          status: statusDo.isNotEmpty ? statusDo : statusTujuan,
+          namaPenerima: nama);
+      _hapusFile(foto);
+      return _HasilLangkah.ok(ApiClient.pesan(resp, 'Berhasil'), statusDo);
+    }
+    // ditolak server: status di HP mengikuti server. Salinan foto dihapus (foto yang dipilih tetap ada
+    // di layar sehingga driver bisa langsung mengulang).
+    _hapusFile(foto);
+    if (statusDo.isNotEmpty) {
+      await DeliveryOrderLocal().updateStatus(noDeliv: d.noDeliv, status: statusDo);
+    }
+    return _HasilLangkah.ditolak(ApiClient.pesan(resp), statusDo);
+  }
+
+  void _hapusFile(List<String> paths) {
+    for (final path in paths) {
+      try {
+        final f = File(path);
+        if (f.existsSync()) f.deleteSync();
+      } catch (_) {}
+    }
+  }
+
+  void _tampilkan(_HasilLangkah h) {
+    if (h.jenis == 'ok') {
+      dialogSuccess('Berhasil', h.pesan);
+    } else if (h.jenis == 'offline') {
+      dialogSuccess('Tersimpan di HP',
+          '${h.pesan}.\nData & foto disimpan di HP dan akan dikirim otomatis (atau lewat menu Sinkronisasi di Akun).');
+    } else {
+      dialogWarning('Gagal', h.pesan);
+    }
+  }
+
+  Future<ListDo?> _cariDo(String noDeliv, String doId) async {
+    final lokal = await DeliveryOrderLocal().getByNoDeliv(noDeliv);
+    if (lokal != null) return lokal;
+    for (final e in [...listDo, ...listOnGoingDo]) {
+      if (e.noDeliv == noDeliv || e.id == doId) return e;
+    }
+    return detailDo.value;
+  }
+
+  /// CONFIRM -> PICKUP. Mengembalikan true bila diterima server / tersimpan offline.
+  Future<bool> postUpdatePickupDo(noDeliv, doId, status) async {
     Navigator.pop(Get.context!);
+    final selesai = Completer<bool>();
 
     awd.AwesomeDialog(
       context: Get.context!,
@@ -339,201 +419,34 @@ class DeliveryController extends GetxController {
         ),
       ),
       btnOkText: "OK",
-      // btnOkOnPress: () {
-      //   var body = FormData({
-      //     "userid": 1,
-      //     "delivery_order_id": doId,
-      //     "status": status,
-      //   });
-      //   // controllerSlider.loading(); //starts loading animation
-      //   DeliveryProvider().postPickupDo(body).then((value) async {
-      //     if (kDebugMode) {
-      //       print(value.body);
-      //     }
-      //     if (value.status.isOk) {
-      //       var success = value.body['success'];
-      //       var message = value.body['message'];
-      //       if (success == true) {
-      //         // controllerSlider.success(); //starts success animation
-      //         await Future.delayed(const Duration(seconds: 1));
-      //         // controllerSlider.reset(); //resets the slider
-      //         Get.back();
-      //         dialogSuccess('Berhasil', message);
-      //         getListDeliveryOrder();
-      //       } else {
-      //         // controllerSlider.failure(); //starts failure animation
-      //         await Future.delayed(const Duration(seconds: 1));
-      //         // controllerSlider.reset(); //resets the slider
-      //         dialogWarning('Gagal', message);
-      //       }
-      //     } else if (value.status.isServerError) {
-      //       // controllerSlider.failure(); //starts failure animation
-      //       await Future.delayed(const Duration(seconds: 1));
-      //       // controllerSlider.reset(); //resets the slider
-      //       dialogError('Terjadi Kesalahan',
-      //           'Terjadi masalah pada server / koneksi internet lambat');
-      //     } else if (value.status.connectionError) {
-      //       // controllerSlider.failure(); //starts failure animation
-      //       await Future.delayed(const Duration(seconds: 1));
-      //       // controllerSlider.reset(); //resets the slider
-      //       dialogError('Tidak ada koneksi',
-      //           'Jaringan internet bermasalah, silahkan cek koneksi internet!');
-      //     }
-      //   });
-      // },
       btnOkOnPress: () async {
         try {
-          /// =========================
-          /// SAVE PENDING SYNC
-          /// =========================
-          // final payload = jsonEncode({
-          //   "userid": userId,
-          //   "delivery_order_id": doId,
-          //   "status": status,
-          // });
-
-          // await pendingLocal.insert(
-          //   PendingSync(
-          //     type: 'pickup',
-          //     payload: payload,
-          //     isSynced: 0,
-          //     createdAt: DateTime.now().toString(),
-          //   ),
-          // );
-          final now = DateTime.now();
-          final payload = {
-            "delivery_order_id": doId,
-            "is_synced": 0,
-            "pickup": {
-              "status": "PICKUP",
-              "tanggal": now.toString().split(' ')[0],
-              "jam": now.toString().split(' ')[1],
-            },
-            "ongoing": null,
-            "delivered": null,
-          };
-
-          await PendingSyncLocal().upsert(
-            PendingSync(
-              deliveryOrderId: doId,
-              payload: jsonEncode(payload),
-              createdAt: now.toString(),
-            ),
-          );
-
-          /// =========================
-          /// UPDATE SQLITE
-          /// =========================
-          await DeliveryOrderLocal().updateStatus(
-            noDeliv: noDeliv,
-            status: status,
-          );
-
-          /// =========================
-          /// REFRESH UI SQLITE
-          /// =========================
-          // await homeC.refreshHome();
-
-          Get.back();
-
-          dialogSuccess(
-            'Berhasil',
-            'Data disimpan offline',
-          );
+          final d = await _cariDo(noDeliv.toString(), doId.toString());
+          if (d == null) {
+            dialogWarning('Gagal', 'Data delivery order tidak ditemukan, muat ulang daftar.');
+            if (!selesai.isCompleted) selesai.complete(false);
+            return;
+          }
+          final h = await _prosesLangkah(
+              d: d, langkah: 'pickup', statusTujuan: 'PICKUP');
+          await _segarkanSemua();
+          if (h.jenis != 'ditolak') Get.back();
+          _tampilkan(h);
+          if (!selesai.isCompleted) selesai.complete(h.jenis != 'ditolak');
         } catch (e) {
-          dialogError(
-            'Error',
-            e.toString(),
-          );
+          dialogError('Error', e.toString());
+          if (!selesai.isCompleted) selesai.complete(false);
         }
       },
-
       btnCancelText: "Cancel",
       btnCancelOnPress: () {
-        Get.back();
+        if (!selesai.isCompleted) selesai.complete(false);
       },
     ).show();
+    return selesai.future;
   }
 
-  // postUpdateSelesaiLoadingDo(doId, status, controllerSlider) async {
-  //   awd.AwesomeDialog(
-  //     context: Get.context!,
-  //     dialogType: awd.DialogType.question,
-  //     animType: awd.AnimType.topSlide,
-  //     dismissOnTouchOutside: false,
-  //     dismissOnBackKeyPress: false,
-  //     body: const Padding(
-  //       padding: EdgeInsets.all(10),
-  //       child: Text(
-  //         'Yakin akan menyelesaikan tugas loading?',
-  //         textAlign: TextAlign.center,
-  //       ),
-  //     ),
-  //     btnOkText: "OK",
-  //     btnOkOnPress: () {
-  //       try {
-  //         FormData formData = FormData({});
-  //         formData.fields.add(MapEntry("userid", userId.toString()));
-  //         formData.fields.add(MapEntry("delivery_order_id", doId));
-  //         formData.fields.add(MapEntry("status", status));
-  //         for (var file in imageFileListPickup!) {
-  //           formData.files.add(MapEntry(
-  //             'file_foto[]',
-  //             MultipartFile(File(file.path), filename: file.name),
-  //           ));
-  //         }
-  //
-  //         if (kDebugMode) {
-  //           print(formData.fields);
-  //         }
-  //         controllerSlider.loading(); //starts loading animation
-  //         DeliveryProvider()
-  //             .postUpdateSelesaiLoadingDo(formData)
-  //             .then((value) async {
-  //           if (kDebugMode) {
-  //             print(value.body);
-  //           }
-  //           if (value.status.isOk) {
-  //             var success = value.body['success'];
-  //             var message = value.body['message'];
-  //             if (success == true) {
-  //               controllerSlider.success(); //starts success animation
-  //               await Future.delayed(const Duration(seconds: 1));
-  //               controllerSlider.reset(); //resets the slider
-  //               Get.back();
-  //               getListOnGoingDeliveryOrder();
-  //               imageFileListPickup!.clear();
-  //
-  //               dialogSuccess('Berhasil', message);
-  //             } else {
-  //               controllerSlider.failure(); //starts failure animation
-  //               await Future.delayed(const Duration(seconds: 1));
-  //               controllerSlider.reset(); //resets the slider
-  //               dialogWarning('Gagal', message);
-  //             }
-  //           } else if (value.status.isServerError) {
-  //             controllerSlider.failure(); //starts failure animation
-  //             await Future.delayed(const Duration(seconds: 1));
-  //             controllerSlider.reset(); //resets the slider
-  //             dialogError('Terjadi Kesalahan',
-  //                 'Terjadi masalah pada server / koneksi internet lambat');
-  //           } else if (value.status.connectionError) {
-  //             controllerSlider.failure(); //starts failure animation
-  //             dialogError('Tidak ada koneksi',
-  //                 'Jaringan internet bermasalah, silahkan cek koneksi internet!');
-  //           }
-  //         });
-  //       } catch (e) {
-  //         controllerSlider.failure(); //starts failure animation
-  //         return dialogError('Terjadi Kesalahan', e.toString());
-  //       }
-  //     },
-  //     btnCancelText: "Cancel",
-  //     btnCancelOnPress: () {
-  //       Get.back();
-  //     },
-  //   ).show();
-  // }
+  /// PICKUP -> ON DELIVERY (selesai loading) + foto loading
   postUpdateSelesaiLoadingDo(
     String noDeliv,
     String doId,
@@ -557,300 +470,43 @@ class DeliveryController extends GetxController {
       btnOkOnPress: () async {
         try {
           controllerSlider.loading();
+          final d = detailDo.value ?? await _cariDo(noDeliv, doId);
+          if (d == null) throw 'Data delivery order tidak ditemukan';
 
-          /// =========================
-          /// SAVE FILE LOCAL
-          /// =========================
-          List<String> savedFiles = [];
+          final foto = await _simpanFoto(imageFileListPickup);
+          final h = await _prosesLangkah(
+              d: d, langkah: 'ongoing', statusTujuan: 'ON DELIVERY', foto: foto);
+          await _segarkanSemua();
 
-          print(
-            'pickup image before save : '
-            '${imageFileListPickup?.map((e) => e.path).toList()}',
-          );
-
-          for (var file in imageFileListPickup!) {
-            final savedPath = await FileHelper.saveImagePermanently(file.path);
-
-            savedFiles.add(savedPath);
-
-            print(
-              'pickup image before save : '
-              '${imageFileListPickup?.map((e) => e.path).toList()}',
-            );
+          if (h.jenis == 'ditolak') {
+            controllerSlider.failure();
+            await Future.delayed(const Duration(seconds: 1));
+            controllerSlider.reset();
+            _tampilkan(h);
+            return;
           }
-
-          print(
-            'pickup picture insert : '
-            '${savedFiles.map((e) {
-              return Picture(
-                fileFoto: e,
-                keterangan: 'PICKUP',
-              ).toJson();
-            }).toList()}',
-          );
-
-          /// =========================
-          /// INSERT HISTORY DETAIL LOCAL
-          /// =========================
-          await HistoryDoDetailLocal().insertAll([
-            HistoryDoDetail(
-              id: doId,
-
-              tglEstimasiPickup: detailDo.value!.tglEstimasiPickup,
-
-              jamEstimasiPickup: detailDo.value!.jamEstimasiPickup,
-
-              tglEstimasiSampai: detailDo.value!.tglEstimasiSampai,
-
-              jamEstimasiSampai: detailDo.value!.jamEstimasiSampai,
-
-              refDate: detailDo.value!.refDate,
-
-              noDeliv: detailDo.value!.noDeliv,
-
-              shipVia: detailDo.value!.shipVia,
-
-              poNumber: detailDo.value!.poNumber,
-
-              alamatPickup: detailDo.value!.alamatPickup,
-
-              alamatPengiriman: detailDo.value!.alamatPengiriman,
-
-              memo: detailDo.value!.memo,
-
-              status: status,
-
-              tanggalDiterima: DateTime.now(),
-
-              jamDiterima: DateFormat(
-                'HH:mm:ss',
-              ).format(
-                DateTime.now(),
-              ),
-
-              namaPenerima: '',
-
-              /// =========================
-              /// PICTURE PICKUP
-              /// =========================
-              picture: savedFiles.map((e) {
-                return Picture(
-                  fileFoto: e,
-                  keterangan: 'PICKUP',
-                );
-              }).toList(),
-            ),
-          ]);
-
-          // /// =========================
-          // /// PAYLOAD
-          // /// =========================
-          // final payload = jsonEncode({
-          //   "userid": userId,
-          //   "delivery_order_id": doId,
-          //   "status": status,
-          //   "files": savedFiles,
-          // });
-          //
-          // /// =========================
-          // /// SAVE PENDING SYNC
-          // /// =========================
-          // await pendingLocal.insert(
-          //   PendingSync(
-          //     type: 'loading',
-          //     payload: payload,
-          //     isSynced: 0,
-          //     createdAt: DateTime.now().toString(),
-          //   ),
-          // );
-
-          final pending = await PendingSyncLocal().getByDoId(doId);
-
-          if (pending == null) return;
-
-          final payload = jsonDecode(pending.payload);
-
-          final now = DateTime.now();
-
-          payload['ongoing'] = {
-            "status": "ON DELIVERY",
-            "tanggal": now.toString().split(' ')[0],
-            "jam": now.toString().split(' ')[1],
-            "files": savedFiles,
-          };
-
-          await PendingSyncLocal().upsert(
-            PendingSync(
-              id: pending.id,
-              deliveryOrderId: doId,
-              payload: jsonEncode(payload),
-              createdAt: pending.createdAt,
-            ),
-          );
-
-          /// =========================
-          /// UPDATE SQLITE
-          /// =========================
-          await DeliveryOrderLocal().updateStatus(
-            noDeliv: noDeliv,
-            status: status,
-          );
-
-          /// =========================
-          /// REFRESH UI SQLITE
-          /// =========================
-          await getListOnGoingDeliveryOrder();
-
           imageFileListPickup!.clear();
-
           controllerSlider.success();
-
-          await Future.delayed(
-            const Duration(seconds: 1),
-          );
-
+          await Future.delayed(const Duration(seconds: 1));
           controllerSlider.reset();
-
           Get.back();
-
-          dialogSuccess(
-            'Berhasil',
-            'Data disimpan offline',
-          );
+          _tampilkan(h);
         } catch (e) {
           controllerSlider.failure();
-
-          await Future.delayed(
-            const Duration(seconds: 1),
-          );
-
+          await Future.delayed(const Duration(seconds: 1));
           controllerSlider.reset();
-
-          dialogError(
-            'Error',
-            e.toString(),
-          );
+          dialogError('Error', e.toString());
         }
       },
       btnCancelText: "Cancel",
       btnCancelOnPress: () {
-        Get.back();
+        // dulu Get.back() di sini ikut menutup halaman detail
+        controllerSlider.reset();
       },
     ).show();
   }
 
-  // postUpdateDeliveredDo(doId, status, controllerSlider) {
-  //   awd.AwesomeDialog(
-  //     context: Get.context!,
-  //     dialogType: awd.DialogType.question,
-  //     animType: awd.AnimType.topSlide,
-  //     dismissOnTouchOutside: false,
-  //     dismissOnBackKeyPress: false,
-  //     body: Padding(
-  //       padding: const EdgeInsets.all(10),
-  //       child: Form(
-  //         key: formKeyNamaPenerima,
-  //         child: Column(
-  //           children: [
-  //             const Text(
-  //               'Yakin akan menyelesaikan tugas delivery?\nMasukkan nama penerima!',
-  //               textAlign: TextAlign.center,
-  //             ),
-  //             20.height,
-  //             TextFormField(
-  //               controller: namaPenerimaController,
-  //               decoration: InputDecoration(
-  //                 filled: true,
-  //                 hintText: 'Nama Penerima',
-  //                 contentPadding:
-  //                     const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-  //                 border: OutlineInputBorder(
-  //                   borderRadius: BorderRadius.circular(10.0),
-  //                 ),
-  //               ),
-  //               validator: (value) {
-  //                 if (value == null || value.isEmpty) {
-  //                   return 'Form harus diisi!';
-  //                 }
-  //                 return null;
-  //               },
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //     btnOkText: "OK",
-  //     btnOkOnPress: () {
-  //       if (formKeyNamaPenerima.currentState!.validate()) {
-  //         try {
-  //           FormData formData = FormData({});
-  //           formData.fields.add(MapEntry("userid", userId.toString()));
-  //           formData.fields.add(MapEntry("delivery_order_id", doId));
-  //           formData.fields
-  //               .add(MapEntry("nama_penerima", namaPenerimaController.text));
-  //           formData.fields.add(MapEntry("status", status));
-  //           for (var file in imageFileListDelivered!) {
-  //             formData.files.add(MapEntry(
-  //               'file_foto[]',
-  //               MultipartFile(File(file.path), filename: file.name),
-  //             ));
-  //           }
-  //
-  //           if (kDebugMode) {
-  //             print(formData.fields);
-  //           }
-  //           controllerSlider.loading(); //starts loading animation
-  //           DeliveryProvider()
-  //               .postUpdateDeliveredDo(formData)
-  //               .then((value) async {
-  //             if (kDebugMode) {
-  //               print(value.body);
-  //             }
-  //             if (value.status.isOk) {
-  //               var success = value.body['success'];
-  //               var message = value.body['message'];
-  //               if (success == true) {
-  //                 controllerSlider.success(); //starts success animation
-  //                 await Future.delayed(const Duration(seconds: 1));
-  //                 controllerSlider.reset(); //resets the slider
-  //                 imageFileListDelivered!.clear();
-  //                 historyC.getListHistoryDo();
-  //                 getListOnGoingDeliveryOrder();
-  //                 Get.back();
-  //                 dialogSuccess('Berhasil', message);
-  //               } else {
-  //                 controllerSlider.failure(); //starts failure animation
-  //                 await Future.delayed(const Duration(seconds: 1));
-  //                 controllerSlider.reset(); //resets the slider
-  //                 dialogWarning('Gagal', message);
-  //               }
-  //             } else if (value.status.isServerError) {
-  //               controllerSlider.failure(); //starts failure animation
-  //               await Future.delayed(const Duration(seconds: 1));
-  //               controllerSlider.reset(); //resets the slider
-  //               dialogError('Terjadi Kesalahan',
-  //                   'Terjadi masalah pada server / koneksi internet lambat');
-  //             } else if (value.status.connectionError) {
-  //               controllerSlider.failure(); //starts failure animation
-  //               await Future.delayed(const Duration(seconds: 1));
-  //               controllerSlider.reset(); //resets the slider
-  //               dialogError('Tidak ada koneksi',
-  //                   'Jaringan internet bermasalah, silahkan cek koneksi internet!');
-  //             }
-  //           });
-  //         } catch (e) {
-  //           return dialogError('Terjadi Kesalahan', e.toString());
-  //         }
-  //       } else {
-  //         dialogWarning('Warning', 'Nama penerima harus diisi...!');
-  //       }
-  //     },
-  //     btnCancelText: "Cancel",
-  //     btnCancelOnPress: () {
-  //       Get.back();
-  //     },
-  //   ).show();
-  // }
+  /// ON DELIVERY -> DELIVERED + nama penerima (wajib) + foto drop off
   Future<void> postUpdateDeliveredDo({
     required String noDeliv,
     required String doId,
@@ -888,10 +544,9 @@ class DeliveryController extends GetxController {
                   ),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Form harus diisi!';
                   }
-
                   return null;
                 },
               ),
@@ -901,181 +556,133 @@ class DeliveryController extends GetxController {
       ),
       btnOkText: "OK",
       btnOkOnPress: () async {
-        if (!formKeyNamaPenerima.currentState!.validate()) {
+        // dibaca langsung dari controller (form dialog sudah tertutup saat tombol OK ditekan)
+        final nama = namaPenerimaController.text.trim();
+        if (nama.isEmpty) {
+          controllerSlider.reset();
           dialogWarning('Warning', 'Nama penerima harus diisi!');
           return;
         }
 
         try {
           controllerSlider.loading();
+          final d = detailDo.value ?? await _cariDo(noDeliv, doId);
+          if (d == null) throw 'Data delivery order tidak ditemukan';
 
-          /// =========================
-          /// SAVE IMAGE PERMANENT (DROP OFF)
-          /// =========================
-          final savedFiles = <String>[];
+          final foto = await _simpanFoto(imageFileListDelivered);
+          final antreSebelum = await pendingLocal.getByNoDeliv(d.noDeliv);
+          final h = await _prosesLangkah(
+              d: d,
+              langkah: 'delivered',
+              statusTujuan: 'DELIVERED',
+              foto: foto,
+              nama: nama);
 
-          for (final file in imageFileListDelivered!) {
-            final savedPath = await FileHelper.saveImagePermanently(file.path);
-            savedFiles.add(savedPath);
+          if (h.jenis == 'offline') {
+            await _simpanRiwayatOffline(d, nama, foto, antreSebelum);
           }
+          await _segarkanSemua();
 
-          /// =========================
-          /// UPDATE STATUS DO
-          /// =========================
-          await DeliveryOrderLocal().updateStatus(
-            noDeliv: noDeliv,
-            status: status,
-            namaPenerima: namaPenerimaController.text,
-          );
-
-          /// =========================
-          /// INSERT HISTORY LOCAL
-          /// =========================
-          await HistoryDoLocal().insert(
-            HistoryDo(
-              id: doId,
-              tglEstimasiPickup: detailDo.value!.tglEstimasiPickup,
-              jamEstimasiPickup: detailDo.value!.jamEstimasiPickup,
-              tglEstimasiSampai: detailDo.value!.tglEstimasiSampai,
-              jamEstimasiSampai: detailDo.value!.jamEstimasiSampai,
-              refDate: detailDo.value!.refDate,
-              noDeliv: detailDo.value!.noDeliv,
-              shipVia: detailDo.value!.shipVia,
-              poNumber: detailDo.value!.poNumber,
-              alamatPickup: detailDo.value!.alamatPickup,
-              alamatPengiriman: detailDo.value!.alamatPengiriman,
-              memo: detailDo.value!.memo ?? '',
-              status: status,
-              tanggalDiterima: DateTime.now(),
-              jamDiterima: DateFormat(
-                'HH:mm:ss',
-              ).format(
-                DateTime.now(),
-              ),
-              namaPenerima: namaPenerimaController.text,
-            ),
-          );
-
-          /// =========================
-          /// AMBIL DATA DETAIL TERBARU (SOURCE OF TRUTH)
-          /// =========================
-          final oldData = await HistoryDoDetailLocal().getByDoId(doId);
-
-          final existingPictures = oldData[0].picture ?? [];
-
-          /// FILTER PICKUP SAJA (PASTI CLEAN)
-          final pickupPictures = existingPictures
-              .where((e) => (e.keterangan ?? '').toUpperCase() == 'PICKUP')
-              .toList();
-
-          /// =========================
-          /// CREATE DROP OFF BARU
-          /// =========================
-          final dropoffPictures = savedFiles.map((e) {
-            return Picture(
-              fileFoto: e,
-              keterangan: 'DROP OFF',
-            );
-          }).toList();
-
-          /// =========================
-          /// FINAL MERGE (1 ROW ONLY)
-          /// =========================
-          final allPictures = <Picture>[
-            ...pickupPictures,
-            ...dropoffPictures,
-          ];
-
-          print(
-            'FINAL PICTURES: ${allPictures.map((e) => e.toJson()).toList()}',
-          );
-
-          /// =========================
-          /// UPSERT (WAJIB OVERWRITE BUKAN INSERT BARU)
-          /// =========================
-          final updatedDetail = HistoryDoDetail(
-            id: doId,
-            tglEstimasiPickup: detailDo.value!.tglEstimasiPickup,
-            jamEstimasiPickup: detailDo.value!.jamEstimasiPickup,
-            tglEstimasiSampai: detailDo.value!.tglEstimasiSampai,
-            jamEstimasiSampai: detailDo.value!.jamEstimasiSampai,
-            refDate: detailDo.value!.refDate,
-            noDeliv: detailDo.value!.noDeliv,
-            shipVia: detailDo.value!.shipVia,
-            poNumber: detailDo.value!.poNumber,
-            alamatPickup: detailDo.value!.alamatPickup,
-            alamatPengiriman: detailDo.value!.alamatPengiriman,
-            memo: detailDo.value!.memo ?? '',
-            status: status,
-            tanggalDiterima: DateTime.now(),
-            jamDiterima: DateFormat('HH:mm:ss').format(DateTime.now()),
-            namaPenerima: namaPenerimaController.text,
-            picture: allPictures,
-          );
-
-          /// =========================
-          /// UPDATE DB (BUKAN INSERT)
-          /// =========================
-          await HistoryDoDetailLocal().update(updatedDetail);
-
-          final pending = await PendingSyncLocal().getByDoId(doId);
-
-          if (pending == null) return;
-
-          final payload = jsonDecode(pending.payload);
-
-          final now = DateTime.now();
-
-          payload['delivered'] = {
-            "status": "DELIVERED",
-            "tanggal": now.toString().split(' ')[0],
-            "jam": now.toString().split(' ')[1],
-            "nama_penerima": namaPenerimaController.text,
-            "files": allPictures,
-          };
-
-          await PendingSyncLocal().upsert(
-            PendingSync(
-              id: pending.id,
-              deliveryOrderId: doId,
-              payload: jsonEncode(payload),
-              createdAt: pending.createdAt,
-            ),
-          );
-
-          /// =========================
-          /// REFRESH UI
-          /// =========================
-          await getListOnGoingDeliveryOrder();
-          repository.getHistoryDeliveryOrder(userId);
+          if (h.jenis == 'ditolak') {
+            controllerSlider.failure();
+            await Future.delayed(const Duration(seconds: 1));
+            controllerSlider.reset();
+            _tampilkan(h);
+            return;
+          }
 
           imageFileListDelivered!.clear();
           namaPenerimaController.clear();
-
           controllerSlider.success();
-
           await Future.delayed(const Duration(seconds: 1));
           controllerSlider.reset();
-
           Get.back();
-
-          dialogSuccess(
-            'Berhasil',
-            'Data delivery disimpan offline',
-          );
+          _tampilkan(h);
         } catch (e) {
           controllerSlider.failure();
-
           await Future.delayed(const Duration(seconds: 1));
           controllerSlider.reset();
-
           dialogError('Terjadi Kesalahan', e.toString());
         }
       },
       btnCancelText: "Cancel",
       btnCancelOnPress: () {
-        Get.back();
+        controllerSlider.reset();
       },
     ).show();
   }
+
+  /// DO yang diselesaikan offline ditampilkan di riwayat sampai terkirim ke server
+  Future<void> _simpanRiwayatOffline(
+      ListDo d, String nama, List<String> fotoDropOff, PendingSync? antreSebelum) async {
+    final now = DateTime.now();
+    final fotoLoading = <String>[];
+    try {
+      final p = await pendingLocal.getByNoDeliv(d.noDeliv);
+      final payload = jsonDecode((p ?? antreSebelum)?.payload ?? '{}');
+      final files = payload['ongoing'] is Map ? payload['ongoing']['files'] : null;
+      if (files is List) {
+        fotoLoading.addAll(files.whereType<String>());
+      }
+    } catch (_) {}
+
+    await HistoryDoLocal().insert(HistoryDo(
+      id: d.id,
+      tglEstimasiPickup: d.tglEstimasiPickup,
+      jamEstimasiPickup: d.jamEstimasiPickup,
+      tglEstimasiSampai: d.tglEstimasiSampai,
+      jamEstimasiSampai: d.jamEstimasiSampai,
+      refDate: d.refDate,
+      noDeliv: d.noDeliv,
+      shipVia: d.shipVia,
+      poNumber: d.poNumber,
+      alamatPickup: d.alamatPickup,
+      alamatPengiriman: d.alamatPengiriman,
+      memo: (d.memo ?? '').toString(),
+      status: 'DELIVERED',
+      tanggalDiterima: now,
+      jamDiterima: _jam(now),
+      namaPenerima: nama,
+    ));
+    await HistoryDoDetailLocal().simpan(HistoryDoDetail(
+      id: d.id,
+      tglEstimasiPickup: d.tglEstimasiPickup,
+      jamEstimasiPickup: d.jamEstimasiPickup,
+      tglEstimasiSampai: d.tglEstimasiSampai,
+      jamEstimasiSampai: d.jamEstimasiSampai,
+      refDate: d.refDate,
+      noDeliv: d.noDeliv,
+      shipVia: d.shipVia,
+      poNumber: d.poNumber,
+      alamatPickup: d.alamatPickup,
+      alamatPengiriman: d.alamatPengiriman,
+      memo: (d.memo ?? '').toString(),
+      status: 'DELIVERED',
+      tanggalDiterima: now,
+      jamDiterima: _jam(now),
+      namaPenerima: nama,
+      picture: [
+        ...fotoLoading.map((e) => Picture(fileFoto: e, keterangan: 'PICKUP')),
+        ...fotoDropOff.map((e) => Picture(fileFoto: e, keterangan: 'DROP OFF')),
+      ],
+    ));
+  }
+}
+
+/// hasil 1 langkah: ok (diterima server), offline (disimpan di antrean), ditolak (pesan dari server)
+class _HasilLangkah {
+  final String jenis;
+  final String pesan;
+  final String statusDo;
+
+  _HasilLangkah(this.jenis, this.pesan, this.statusDo);
+
+  factory _HasilLangkah.ok(String pesan, String statusDo) =>
+      _HasilLangkah('ok', pesan, statusDo);
+
+  factory _HasilLangkah.offline(String pesan) =>
+      _HasilLangkah('offline', pesan, '');
+
+  factory _HasilLangkah.ditolak(String pesan, String statusDo) =>
+      _HasilLangkah('ditolak', pesan, statusDo);
 }

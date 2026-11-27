@@ -24,7 +24,13 @@ class DBService {
 
     return await openDatabase(
       path,
-      version: 1,
+      // VERSI 50: versi 2 -> kolom tambahan (lihat _upgradeKe2)
+      version: 2,
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await _upgradeKe2(db);
+        }
+      },
       onCreate: (db, version) async {
         /// =========================
         /// DELIVERY ORDER
@@ -56,7 +62,9 @@ class DBService {
 
             nama_penerima TEXT,
 
-            is_synced INTEGER
+            is_synced INTEGER,
+
+            extra TEXT
           )
         ''');
 
@@ -171,10 +179,37 @@ class DBService {
 
             created_at TEXT,
 
-            is_synced INTEGER
+            is_synced INTEGER,
+
+            no_deliv TEXT,
+
+            last_error TEXT
           )
         ''');
       },
     );
+  }
+
+  /// VERSI 50:
+  /// - delivery_order.extra  : data tambahan dari server (customer, gudang, daftar barang, dll) dalam JSON
+  /// - pending_sync.no_deliv : kunci antrean offline per nomor DO (id terenkripsi dari server berubah tiap request)
+  /// - pending_sync.last_error: pesan terakhir bila sinkronisasi belum berhasil
+  static Future<void> _upgradeKe2(Database db) async {
+    Future<void> tambahKolom(String tabel, String kolom) async {
+      final info = await db.rawQuery('PRAGMA table_info($tabel)');
+      if (!info.any((e) => e['name'] == kolom)) {
+        await db.execute('ALTER TABLE $tabel ADD COLUMN $kolom TEXT');
+      }
+    }
+
+    await tambahKolom('delivery_order', 'extra');
+    await tambahKolom('pending_sync', 'no_deliv');
+    await tambahKolom('pending_sync', 'last_error');
+    // antrean dari versi lama: isi no_deliv dari data DO lokal
+    await db.execute('''
+      UPDATE pending_sync SET no_deliv = (
+        SELECT d.no_deliv FROM delivery_order d WHERE d.id = pending_sync.delivery_order_id
+      ) WHERE no_deliv IS NULL
+    ''');
   }
 }

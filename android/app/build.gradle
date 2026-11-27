@@ -11,7 +11,7 @@ android {
     namespace = "com.example.attamana_truck_app"
     compileSdk = flutter.compileSdkVersion
 //    ndkVersion = flutter.ndkVersion
-    ndkVersion "25.1.8937393"
+    ndkVersion "27.0.12077973" // plugin (firebase, notifikasi, dll) butuh NDK 27; sebelumnya 25.1.8937393
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

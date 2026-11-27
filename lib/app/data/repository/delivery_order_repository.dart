@@ -1,255 +1,139 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 
 import '../../modules/delivery/models/delivery_order.dart';
-
 import '../../modules/delivery/providers/delivery_provider.dart';
-
 import '../../modules/history/models/history_do.dart';
 import '../../modules/history/models/history_do_detail.dart';
 import '../../modules/history/providers/history_do_provider.dart';
+import '../api/api_client.dart';
 import '../local/delivery_order_local.dart';
 import '../local/history_do_detail_local.dart';
 import '../local/history_do_local.dart';
+import '../local/pending_sync_local.dart';
 
+/// VERSI 50: server menjadi acuan data. SQLite hanya cache untuk mode offline
+/// + DO yang masih punya antrean offline (pending_sync) tidak ditimpa data server.
+///
+/// Dulu:
+/// - list DO hanya MENAMBAH data baru ke cache dan tidak pernah membuang yang lama
+///   (DO yang sudah diproses / di-void di web tetap muncul)
+/// - list "berjalan" hanya dari SQLite (DO yang di-pickup lewat web tidak pernah muncul)
+/// - riwayat: data lokal selalu menang atas data server, baris ganda terus bertambah
+/// - detail riwayat selalu dari lokal bila ada (data lama / foto path HP)
 class DeliveryOrderRepository {
   final DeliveryOrderLocal local = DeliveryOrderLocal();
 
   final HistoryDoLocal historyLocal = HistoryDoLocal();
   final HistoryDoDetailLocal historyDetailLocal = HistoryDoDetailLocal();
+  final PendingSyncLocal pendingLocal = PendingSyncLocal();
 
-  Future<List<ListDo>> getListDeliveryOrder(int userId) async {
-    try {
-      final body = {
-        "userid": userId,
-      };
-
-      final response = await DeliveryProvider().getListDo(body);
-
-      if (response.status.isOk) {
-        final success = response.body['success'];
-
-        if (success == true) {
-          final data = response.body['data'];
-
-          final result = listDoFromJson(data);
-
-          print(
-            'list do dari server${jsonEncode(
-              result.map((e) => e.toJson()).toList(),
-            )}',
-          );
-
-          // FILTER STATUS CONFIRM
-          final filtered = result.where((e) => e.status == "CONFIRM").toList();
-
-          print(
-            'filtered ${jsonEncode(
-              filtered.map((e) => e.toJson()).toList(),
-            )}',
-          );
-
-          /// AMBIL DATA LOCAL YANG SUDAH ADA
-          final existing = await local.getAll();
-
-          print(
-            'existing ${jsonEncode(
-              existing.map((e) => e.toJson()).toList(),
-            )}',
-          );
-
-          /// AMBIL NO DELIVERY YANG SUDAH ADA
-          final existingNo = existing.map((e) => e.noDeliv).toSet();
-
-          print('existingNo $existingNo');
-
-          /// FILTER DATA BARU
-          final newData =
-              filtered.where((e) => !existingNo.contains(e.noDeliv)).toList();
-
-          print(
-            'newData ${jsonEncode(
-              newData.map((e) => e.toJson()).toList(),
-            )}',
-          );
-
-          /// INSERT HANYA DATA BARU
-          if (newData.isNotEmpty) {
-            await local.insertAll(newData);
-
-            print('insert berhasil');
-          } else {
-            print('tidak ada data baru');
-          }
-
-          /// CEK DATA LOCAL SETELAH INSERT
-          final localData = await local.getAll();
-
-          print(
-            'localData ${jsonEncode(
-              localData.map((e) => e.toJson()).toList(),
-            )}',
-          );
-        }
-      }
-
-      return await local.getAll();
-    } catch (e) {
-      return await local.getAll();
-    }
+  void _log(Object o) {
+    if (kDebugMode) print(o);
   }
 
-  Future<List<ListDo>> getListOnGoingDeliveryOrder() async {
-    // return await local.getByStatus(
-    //   'PICKUP',
-    // );
+  /// DO menunggu pickup (CONFIRM)
+  Future<List<ListDo>> getListDeliveryOrder(dynamic userId) async {
+    try {
+      final response = await DeliveryProvider().getListDo({"userid": userId});
+      if (ApiClient.sukses(response)) {
+        final server = listDoFromJson(response.body['data'] ?? []);
+        final tertunda = await pendingLocal.noDelivTertunda();
+        await local.sinkronkan(
+            server.where((e) => e.status == 'CONFIRM').toList(),
+            ['CONFIRM'],
+            tertunda);
+      } else {
+        _log('list_do: ${ApiClient.pesan(response)}');
+      }
+    } catch (e) {
+      _log('list_do error: $e');
+    }
+    return await local.getByStatuses(['CONFIRM']);
+  }
+
+  /// DO berjalan (PICKUP / ON DELIVERY) dari server + yang diproses offline
+  Future<List<ListDo>> getListOnGoingDeliveryOrder([dynamic userId]) async {
+    if (userId != null) {
+      try {
+        final response =
+            await DeliveryProvider().getListOnGoingDo({"userid": userId});
+        if (ApiClient.sukses(response)) {
+          final server = listDoFromJson(response.body['data'] ?? []);
+          final tertunda = await pendingLocal.noDelivTertunda();
+          await local.sinkronkan(server, ['PICKUP', 'ON DELIVERY'], tertunda);
+          await local.hapusYangSelesai(tertunda);
+        } else {
+          _log('list_ongoing_do: ${ApiClient.pesan(response)}');
+        }
+      } catch (e) {
+        _log('list_ongoing_do error: $e');
+      }
+    }
     return await local.getByStatuses([
       'PICKUP',
       'ON DELIVERY',
     ]);
   }
 
-  /// =========================
-  /// HISTORY OFFLINE FIRST
-  /// =========================
-  Future<List<HistoryDo>> getHistoryDeliveryOrder(int userId) async {
+  Future<List<HistoryDo>> getHistoryDeliveryOrder(dynamic userId) async {
     try {
-      final all = await HistoryDoLocal().getAll();
-      print('ALL LOCAL HISTORY: ${all.map((e) => e.toMap()).toList()}');
-
-      /// =========================
-      /// API SERVER
-      /// =========================
-      var body = {
-        "userid": userId,
-      };
-
-      final value = await HistoryDoProvider().getHistoryDo(body);
-
-      List<HistoryDo> serverData = [];
-
-      if (value.status.isOk) {
-        final success = value.body['success'];
-
-        if (success == true) {
-          final data = value.body['data'];
-
-          /// JSON -> MODEL
-          serverData = historyDoFromJson(data);
-
-          /// SAVE LOCAL
-          await historyLocal.insertAll(
-            serverData,
-          );
-        }
+      final value = await HistoryDoProvider().getHistoryDo({"userid": userId});
+      if (ApiClient.sukses(value)) {
+        final serverData = historyDoFromJson(value.body['data'] ?? []);
+        final tertunda = await pendingLocal.noDelivTertunda();
+        await historyLocal.gantiDariServer(serverData, tertunda);
+      } else {
+        _log('list_history_do: ${ApiClient.pesan(value)}');
       }
-
-      /// =========================
-      /// LOCAL DATA
-      /// =========================
-      final localData = await historyLocal.getAll();
-
-      print('serverData: ${serverData.length}');
-      print('localData: ${localData.length}');
-
-      print('server IDs: ${serverData.map((e) => e.noDeliv)}');
-      print('local IDs: ${localData.map((e) => e.noDeliv)}');
-
-      /// =========================
-      /// MERGE DATA (FIXED VERSION)
-      /// =========================
-      final Map<String, HistoryDo> merged = {};
-
-      // server data
-      for (var item in serverData) {
-        merged[item.noDeliv] = item;
-      }
-
-      // local override (offline update menang)
-      for (var item in localData) {
-        merged[item.noDeliv] = item;
-      }
-
-      final result = merged.values.toList();
-
-      /// =========================
-      /// PRINT RESULT
-      /// =========================
-      for (var item in result) {
-        print('History => '
-            '${item.noDeliv} '
-            '${item.status} '
-            '${item.namaPenerima}');
-      }
-
-      return result;
     } catch (e) {
-      if (kDebugMode) {
-        print(e);
-      }
-
-      /// fallback local
-      return await historyLocal.getAll();
+      _log('list_history_do error: $e');
     }
+    final hasil = await historyLocal.getAll();
+    // terbaru di atas
+    hasil.sort((a, b) {
+      final c = b.tanggalDiterima.compareTo(a.tanggalDiterima);
+      return c != 0 ? c : b.jamDiterima.compareTo(a.jamDiterima);
+    });
+    return hasil;
   }
 
   Future<List<HistoryDoDetail>> getHistoryDoDetail(String doId) async {
-    try {
-      /// =========================
-      /// LOCAL FIRST
-      /// =========================
-      final localData = await historyDetailLocal.getByDoId(doId);
+    final header = await historyLocal.getById(doId);
+    final noDeliv = header?.noDeliv ?? '';
+    final tertunda = await pendingLocal.noDelivTertunda();
 
-      /// kalau local ada
-      /// langsung pakai local
-      if (localData.isNotEmpty) {
-        print('AMBIL DETAIL DARI LOCAL');
-
-        return localData;
-      }
-
-      /// =========================
-      /// SERVER
-      /// =========================
-      print('AMBIL DETAIL DARI SERVER');
-
-      final value = await HistoryDoProvider().getHistoryDoDetail(doId);
-
-      if (value.status.isOk) {
-        final success = value.body['success'];
-
-        if (success == true) {
-          final data = value.body['data'];
-
-          final serverData = historyDoDetailFromJson(data);
-
-          /// save local
-          await historyDetailLocal.insertAll(serverData);
-
-          return serverData;
-        }
-      }
-
-      return [];
-    } catch (e) {
-      print(e);
-
-      return await historyDetailLocal.getByDoId(doId);
+    // DO yang diselesaikan offline & belum terkirim: hanya ada di HP
+    if (noDeliv.isNotEmpty && tertunda.contains(noDeliv)) {
+      final lokal = await historyDetailLocal.getByNoDeliv(noDeliv);
+      if (lokal.isNotEmpty) return lokal;
     }
+
+    try {
+      final value = await HistoryDoProvider().getHistoryDoDetail(doId);
+      if (ApiClient.sukses(value)) {
+        final serverData = historyDoDetailFromJson(value.body['data'] ?? []);
+        for (final d in serverData) {
+          await historyDetailLocal.simpan(d);
+        }
+        return serverData;
+      }
+      _log('detail_do: ${ApiClient.pesan(value)}');
+    } catch (e) {
+      _log('detail_do error: $e');
+    }
+
+    // offline: pakai cache
+    if (noDeliv.isNotEmpty) {
+      return await historyDetailLocal.getByNoDeliv(noDeliv);
+    }
+    return await historyDetailLocal.getByDoId(doId);
   }
 
   Future<ListDo?> getDetailDeliveryOrder(String id) async {
     try {
-      /// ambil dari sqlite
-      final result = await local.getById(id);
-
-      return result;
+      return await local.getById(id);
     } catch (e) {
-      print(
-        'detail error : $e',
-      );
-
+      _log('detail error : $e');
       return null;
     }
   }

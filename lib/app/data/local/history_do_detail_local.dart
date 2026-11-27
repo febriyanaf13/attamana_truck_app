@@ -99,4 +99,26 @@ class HistoryDoDetailLocal {
 
     return result.map((e) => HistoryDoDetail.fromMap(e)).toList();
   }
+
+  Future<List<HistoryDoDetail>> getByNoDeliv(String noDeliv) async {
+    final db = await DBService.database;
+    final result = await db.query('history_delivery_detail',
+        where: 'no_deliv = ?', whereArgs: [noDeliv], limit: 1);
+    return result.map((e) => HistoryDoDetail.fromMap(e)).toList();
+  }
+
+  /// VERSI 50: simpan detail (1 baris per nomor DO)
+  Future<void> simpan(HistoryDoDetail data) async {
+    final db = await DBService.database;
+    await db.delete('history_delivery_detail',
+        where: 'no_deliv = ?', whereArgs: [data.noDeliv]);
+    await db.insert('history_delivery_detail', data.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> deleteByNoDeliv(String noDeliv) async {
+    final db = await DBService.database;
+    await db.delete('history_delivery_detail',
+        where: 'no_deliv = ?', whereArgs: [noDeliv]);
+  }
 }

@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../../components/dialog/custom_dialog.dart';
 import '../../../routes/app_pages.dart';
 import '../../../utils/constants.dart';
+import '../../../data/api/api_client.dart';
 
 class WelcomeController extends GetxController {
   //TODO: Implement WelcomeController
@@ -35,15 +36,18 @@ class WelcomeController extends GetxController {
 
 
   void reqToken() {
-    AuthProvider().reqToken('attamanadriver', 'febrimobile150708').then((value) {
+    // VERSI 50: kirim versi aplikasi (wajib di server) & akun API dari ApiClient
+    AuthProvider()
+        .reqToken(ApiClient.apiUsername, ApiClient.apiPassword,
+            version: version.value)
+        .then((value) {
       if (kDebugMode) {
         print('status_code token : ${value.statusCode}');
       }
 
-      var success = value.body['success'];
-      var message = value.body['message'];
-
-      if (value.status.isOk) {
+      if (value.status.isOk && value.body is Map) {
+        var success = value.body['success'];
+        var message = value.body['message'];
         if (success == true) {
           storage.write('token', value.body['token']);
           storage.write(kSesionInstall, true);
@@ -55,8 +59,14 @@ class WelcomeController extends GetxController {
         dialogError('Terjadi Kesalahan',
             'Terjadi masalah pada server / koneksi internet lambat');
       } else if (value.status.connectionError) {
-        dialogError('Tidak ada koneksi',
-            'Jaringan internet bermasalah, silahkan cek koneksi internet!');
+        // VERSI 50: aplikasi mendukung mode offline. Bila sudah pernah login, tetap masuk
+        // memakai token terakhir; data tersimpan di HP dan dikirim saat online.
+        if (sessionInstall == true && session == true) {
+          autoLogin();
+        } else {
+          dialogError('Tidak ada koneksi',
+              'Jaringan internet bermasalah, silahkan cek koneksi internet!');
+        }
       }
     });
   }

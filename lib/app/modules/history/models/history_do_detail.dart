@@ -146,28 +146,30 @@ class HistoryDoDetail {
   factory HistoryDoDetail.fromMap(Map<String, dynamic> map) {
     return HistoryDoDetail(
       id: map["id"],
-      tglEstimasiPickup: DateTime.parse(map["tgl_estimasi_pickup"]),
-      jamEstimasiPickup: map["jam_estimasi_pickup"],
-      tglEstimasiSampai: DateTime.parse(map["tgl_estimasi_sampai"]),
-      jamEstimasiSampai: map["jam_estimasi_sampai"],
-      refDate: DateTime.parse(map["ref_date"]),
-      noDeliv: map["no_deliv"],
-      shipVia: map["ship_via"],
-      poNumber: map["po_number"],
-      alamatPickup: map["alamat_pickup"],
-      alamatPengiriman: map["alamat_pengiriman"],
-      memo: map["memo"],
-      status: map["status"],
-      tanggalDiterima: DateTime.parse(map["tanggal_diterima"]),
-      jamDiterima: map["jam_diterima"],
-      namaPenerima: map["nama_penerima"],
-      picture: List<Picture>.from(
-        jsonDecode(
-          map["picture"],
-        ).map(
-          (x) => Picture.fromJson(x),
-        ),
-      ),
+      tglEstimasiPickup: parseDate(map["tgl_estimasi_pickup"]),
+      jamEstimasiPickup: (map["jam_estimasi_pickup"] ?? '-').toString(),
+      tglEstimasiSampai: parseDate(map["tgl_estimasi_sampai"]),
+      jamEstimasiSampai: (map["jam_estimasi_sampai"] ?? '-').toString(),
+      refDate: parseDate(map["ref_date"]),
+      noDeliv: (map["no_deliv"] ?? '-').toString(),
+      shipVia: (map["ship_via"] ?? '-').toString(),
+      poNumber: (map["po_number"] ?? '-').toString(),
+      alamatPickup: (map["alamat_pickup"] ?? '-').toString(),
+      alamatPengiriman: (map["alamat_pengiriman"] ?? '-').toString(),
+      memo: (map["memo"] ?? '-').toString(),
+      status: (map["status"] ?? '-').toString(),
+      tanggalDiterima: parseDate(map["tanggal_diterima"]),
+      jamDiterima: (map["jam_diterima"] ?? '-').toString(),
+      namaPenerima: (map["nama_penerima"] ?? '-').toString(),
+      picture: (map["picture"] == null || map["picture"].toString().isEmpty)
+          ? <Picture>[]
+          : List<Picture>.from(
+              jsonDecode(
+                map["picture"],
+              ).map(
+                (x) => Picture.fromJson(x),
+              ),
+            ),
     );
   }
 
@@ -237,8 +239,8 @@ class Picture {
   });
 
   factory Picture.fromJson(Map<String, dynamic> json) => Picture(
-        fileFoto: json["file_foto"],
-        keterangan: json["keterangan"],
+        fileFoto: (json["file_foto"] ?? '').toString(),
+        keterangan: (json["keterangan"] ?? '').toString(),
       );
 
   Map<String, dynamic> toJson() => {

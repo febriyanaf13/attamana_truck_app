@@ -1,32 +1,19 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
+import '../../../data/api/api_client.dart';
 import '../../../data/api/my_api.dart';
-import '../../../utils/constants.dart';
-import '../../../utils/string_utils.dart';
 
-class HistoryDoProvider extends GetConnect {
-  var token = storage.read(kToken);
-
-  Future<Response> getHistoryDo(body) {
-    var headers = {
-      "Authorization": "Bearer $token",
-    };
-    var api = Api.historyDo;
-    if (kDebugMode) {
-      print(api);
-    }
-    return post(api, body, headers: headers);
+/// VERSI 50: memakai ApiClient (token dibaca tiap request + perpanjang token otomatis).
+class HistoryDoProvider extends ApiClient {
+  Future<Response> getHistoryDo(Map<String, dynamic> body) {
+    if (kDebugMode) print(Api.historyDo);
+    return postApi(Api.historyDo, () => body);
   }
 
-  Future<Response> getHistoryDoDetail(doId) {
-    var headers = {
-      "Authorization": "Bearer $token",
-    };
-    var api = "${Api.historyDoDetail}/$doId";
-    if (kDebugMode) {
-      print(api);
-    }
-    return get(api, headers: headers);
+  Future<Response> getHistoryDoDetail(String doId) {
+    final api = "${Api.historyDoDetail}/$doId";
+    if (kDebugMode) print(api);
+    return getApi(api);
   }
 }

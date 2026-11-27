@@ -4,6 +4,8 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
 class FileHelper {
+  static int _urut = 0;
+
 
   /// =========================
   /// COPY IMAGE TO APP STORAGE
@@ -21,8 +23,10 @@ class FileHelper {
     extension(filePath);
 
     /// rename file
+    // VERSI 50: tambah urutan supaya 2 foto yang disimpan pada milidetik yang sama tidak saling menimpa
+    _urut++;
     final fileName =
-        '${DateTime.now().millisecondsSinceEpoch}$ext';
+        'do_${DateTime.now().millisecondsSinceEpoch}_$_urut$ext';
 
     /// lokasi baru
     final newPath =

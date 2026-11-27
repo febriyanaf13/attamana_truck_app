@@ -13,6 +13,7 @@ import 'package:nb_utils/nb_utils.dart';
 import '../../../components/widget/custom_lottie.dart';
 import '../../../style/colors.dart';
 import '../controllers/delivery_controller.dart';
+import '../models/delivery_order.dart';
 
 class DeliveryDetailsView extends GetView<DeliveryController> {
   const DeliveryDetailsView({Key? key}) : super(key: key);
@@ -218,6 +219,41 @@ class DeliveryDetailsView extends GetView<DeliveryController> {
                             ),
                           ],
                         ),
+                        // VERSI 50: daftar barang yang dikirim (dari API items)
+                        if (controller.detailDo.value!.items.isNotEmpty) ...[
+                          30.height,
+                          const Text(
+                            'Barang',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w400, fontSize: 12),
+                          ),
+                          8.height,
+                          ...controller.detailDo.value!.items.map(
+                            (it) => Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${it.kodeProduk.isNotEmpty ? '${it.kodeProduk} - ' : ''}${it.namaProduk}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 14),
+                                    ),
+                                  ),
+                                  10.width,
+                                  Text(
+                                    '${ItemDo.format(it.qty)} ${it.satuan}${it.qtyKoli > 0 ? ' / ${ItemDo.format(it.qtyKoli)} koli' : ''}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                         30.height,
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,

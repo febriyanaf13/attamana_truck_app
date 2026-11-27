@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nb_utils/nb_utils.dart';
 
-import '../../../data/repository/sync_repository.dart';
 import '../../../style/colors.dart';
 import '../controllers/account_controller.dart';
 
@@ -197,8 +196,29 @@ class AccountView extends GetView<AccountController> {
                         ],
                       ),
                     ).onTap(() {
-                      SyncRepository().syncData(controller.userId);
+                      // VERSI 50: tampilkan hasil sinkronisasi
+                      controller.sinkronkan();
                     }),
+                    // VERSI 50: jumlah data offline yang belum terkirim / sedang sinkron
+                    Obx(() => controller.isSyncing.value
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : (controller.jumlahTertunda.value > 0
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                    color: Colors.orange,
+                                    borderRadius: BorderRadius.circular(10)),
+                                child: Text(
+                                  '${controller.jumlahTertunda.value}',
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 12),
+                                ),
+                              )
+                            : const SizedBox())),
                   ],
                 ),
 

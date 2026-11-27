@@ -4,10 +4,15 @@ import '../../../data/api/my_api.dart';
 
 class AuthProvider extends GetConnect {
   // request token
-  Future<Response> reqToken(String username, String password) {
+  // VERSI 50: server (ApiController@authenticate) mewajibkan parameter version yang sama dengan
+  // tabel tokens. Dulu version tidak dikirim, sehingga token selalu ditolak
+  // ("Maaf aplikasi bukan versi terbaru").
+  Future<Response> reqToken(String username, String password,
+      {String version = ''}) {
     final body = FormData({
       'username': username,
       'password': password,
+      'version': version,
     });
     return post(Api.token, body);
   }

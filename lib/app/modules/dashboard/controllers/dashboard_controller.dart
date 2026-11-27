@@ -21,8 +21,8 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
 
+    // VERSI 50: riwayat cukup dimuat sekali (dulu repository dipanggil 2x bersamaan)
     historyC.getListHistoryDo();
-    DeliveryOrderRepository().getHistoryDeliveryOrder(userId);
 
     super.onInit();
   }
